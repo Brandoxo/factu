@@ -16,8 +16,8 @@
             <div class="text-white text-center flex flex-col justify-center items-center gap-6 h-full  absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
                 <h1 class="title text-2xl font-bold">¿Qué servicio desea facturar?</h1>
                 <div class="w-fit flex flex-col gap-6 text-center justify-center items-center md:flex-row text-xl font-extrabold">
-                    <button class="button-left p-4 font-semibold px-10 bg-red-600 w-86 rounded-md hover:">Hotel</button>
-                    <button class="button-right p-4 font-semibold px-6 bg-red-600 w-96 rounded-md">Restaurante</button>
+                    <button class="button-left p-4 font-semibold px-10 bg-red-600 w-86 rounded-md hover:bg-red-700 cursor-pointer transition-all ease-in-out">Hotel</button>
+                    <button class="button-right p-4 font-semibold px-6 bg-red-600 w-96 rounded-md hover:bg-red-700 cursor-pointer transition-all ease-in-out">Restaurante</button>
                 </div>
             </div>
     </div>
