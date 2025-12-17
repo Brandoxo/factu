@@ -10,24 +10,18 @@
                 <div class="overflow-hidden shadow-sm sm:rounded-lg">
                     <div class="p-4 border-b border-gray-200">
                         <!-- Contenido de la página -->
-                        <form class="flex gap-4 flex-col md:flex-row md:items-end">
+                        <form class="flex gap-6 flex-col md:flex-row md:items-end md:gap-4">
                             <div class="text-white flex gap-4">
                                 <div>
                                 <InputLabel for="ticket-folio" value="Folio del Ticket" class="text-white font-extralight text-xl" />
                                 <Input id="ticket-folio" class="block mt-4 md:w-full  border-white border-2 rounded-xl p-2 bg-white/10" type="text" name="ticket-folio" required autofocus />
-                                <InputError class="mt-2" :message="errors['ticket-folio']" />
                                 </div>
                                 <div>
-                                <InputLabel for="total-amount" value="Importe total" class="text-white font-extralight text-xl" />
-                                <Input id="total-amount" class="block mt-4 md:w-full border-white border-2 rounded-xl p-2 bg-white/10" type="text" name="total-amount" required />
-                                <InputError class="mt-2" :message="errors['total-amount']" />
+                                <InputError class="mt-2" :message="errors['ticket-folio']" />
+                                <InputLabel for="check-in" value="Check-in" class="text-white font-extralight text-xl" />
+                                <Input id="check-in" class="block mt-4 md:w-full border-white border-2 rounded-xl p-2 bg-white/10" type="date" name="check-in" required />
+                                <InputError class="mt-2" :message="errors['check-in']" />
                                 </div>
-                            </div>
-
-                            <div class="text-white">
-                                <InputLabel for="date" value="Fecha del consumo" class="text-white font-extralight text-xl w-full" />
-                                <Input id="date" class="block mt-4 md:w-full border-white border-2 rounded-xl p-2 bg-white/10" type="date" name="date" required />
-                                <InputError class="mt-2" :message="errors['date']" />
                             </div>
 
                             <div class="items-center">
