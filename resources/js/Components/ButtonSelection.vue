@@ -32,10 +32,10 @@ watch(selectedValue, (newValue) => {
                     <h1 class="title text-2xl font-bold">¿Qué servicio desea facturar?</h1>
                     <div class="w-fit flex-col flex md:flex-row gap-6 text-center justify-center items-center  text-xl font-extrabold">
                         <div v-if="selectedValue !== options[1].value">
-                            <button @click="selectOption(options[0].value)" class="button-left p-4 font-semibold px-10 bg-red-600 w-96 rounded-md hover:bg-red-700 cursor-pointer transition-all ease-in-out">{{options[0].label}}</button>
+                            <button @click="selectOption(options[0].value)" class="button-left p-4 font-semibold px-10 bg-red-600 w-64 md:w-96 rounded-md hover:bg-red-700 cursor-pointer transition-all ease-in-out max-w-84">{{options[0].label}}</button>
                         </div>
                         <div v-if="selectedValue !== options[0].value">
-                            <button @click="selectOption(options[1].value)" class="button-right p-4 font-semibold px-6 bg-red-600 w-96 rounded-md hover:bg-red-700 cursor-pointer transition-all ease-in-out">{{options[1].label}}</button>
+                            <button @click="selectOption(options[1].value)" class="button-right p-4 font-semibold px-6 bg-red-600 w-64 md:w-96 rounded-md hover:bg-red-700 cursor-pointer transition-all ease-in-out max-w-84">{{options[1].label}}</button>
                         </div>
                         <div v-if="selectedValue === options[0].value">
                         </div>
