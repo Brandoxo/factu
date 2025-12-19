@@ -11,4 +11,24 @@ class FrontController extends Controller
     {
         return Inertia::render('Index/Index');
     }
+
+    public function submitRestaurantForm(Request $request)
+    {
+        $data = $request->all();
+
+        return response()->json([
+            'message' => 'Restaurant form submitted successfully!',
+            'data' => $data,
+        ]);
+    }
+
+    public function submitHotelForm(Request $request)
+    {
+        $data = $request->all();
+
+        return response()->json([
+            'message' => 'Hotel form submitted successfully!',
+            'data' => $data,
+        ]);
+    }
 }
