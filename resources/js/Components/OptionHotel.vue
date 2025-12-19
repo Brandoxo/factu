@@ -15,6 +15,9 @@ const submitForm = () => {
         checkIn: form.checkIn,
     }).then((response) => {
         console.log(response);
+        const showData = response.data.data.data;
+        const message = ` Bienvenido(a) ${showData.guestName}, su reserva en ${showData.reservationID} para el día ${showData.startDate} ha sido encontrada.`;
+        alert(message);
         form.reset('ticketFolio', 'checkIn');
     }).catch((error) => {
         if (error.response && error.response.data && error.response.data.errors) {
