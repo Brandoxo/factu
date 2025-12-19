@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Inertia\Inertia;
+use Illuminate\Support\Facades\Http;
 
 class FrontController extends Controller
 {
@@ -23,12 +24,31 @@ class FrontController extends Controller
     }
 
     public function submitHotelForm(Request $request)
-    {
-        $data = $request->all();
+{
+    $payload = $request->validate([
+        'ticketFolio' => 'required',
+        'checkIn' => 'required|date',
+
+    ]);
+
+    $response = Http::withHeaders([
+        'Authorization' => 'Bearer ' . env('CLOUDBEDS_API_KEY'),
+        'Accept'        => 'application/json',
+    ])->get('https://api.cloudbeds.com/api/v1.3/getReservation', 
+    ['reservationID' => $payload['ticketFolio']]);
+        
+    if ($response->successful()) {
 
         return response()->json([
-            'message' => 'Hotel form submitted successfully!',
-            'data' => $data,
+            'message' => 'Enviado y recibido correctamente',
+            'data'    => $response->json(),
         ]);
     }
-}
+
+    return response()->json([
+        'message' => 'Error al llamar a la API',
+        'status'  => $response->status(),
+        'body'    => $response->json(),
+    ], $response->status());
+
+}};
