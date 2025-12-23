@@ -1,4 +1,4 @@
-@import 'tailwindcss';
+@import "tailwindcss";
 
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
 @source '../../storage/framework/views/*.php';
@@ -6,29 +6,33 @@
 @source '../**/*.js';
 
 @theme {
-    --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
-        'Segoe UI Symbol', 'Noto Color Emoji';
+  --font-sans: "Instrument Sans", ui-sans-serif, system-ui, sans-serif,
+    "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
 }
 
-@theme{
-        --color-carnita: #FDF8F4;
-        --color-greenblack: #2E3D3A;
-        --color-orangita: #DE935C;
-        --color-gray: #A1A1A1;
-        --color-salmon: #D75C73;
-        --color-aqua: #1E9A8D;
-        --color-blue: #089ABE;
-        --color-hielow: #F5C55B;
-        --color-griseson: #2E3D3A;
-        --color-dark-soft: #222425;
+@theme {
+  --color-carnita: #fdf8f4;
+  --color-greenblack: #2e3d3a;
+  --color-orangita: #de935c;
+  --color-gray: #a1a1a1;
+  --color-salmon: #d75c73;
+  --color-aqua: #1e9a8d;
+  --color-blue: #089abe;
+  --color-hielow: #f5c55b;
+  --color-griseson: #2e3d3a;
+  --color-dark-soft: #222425;
 }
-    .dark-overlay::before {
-        content: "";
-        position: absolute;
-        top: 0;
-        left: 0;
-        z-index: 9;
-        width: 100%;
-        height: 100%;
-        background: rgba(0, 0, 0, 0.8);
-    }
+.dark-overlay::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 9;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.8);
+}
+
+body {
+  background-color: black;
+}
