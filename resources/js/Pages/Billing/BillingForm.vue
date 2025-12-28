@@ -40,6 +40,22 @@ if (form.paid > 1) {
   form.paid = "No";
 }
 
+const hotelData ={
+  Name: "Hotel Ronda Minerva S.A de CV",
+  Description: "Hotel de 3 estrellas ubicado en el centro de la ciudad.",
+  Address: {
+    Street: "Av. Adolfo López Mateos Sur",
+    ExteriorNumber: "265",
+    InteriorNumber: "",
+    Neighborhood: "Jardines del bosque",
+    ZipCode: "44520",
+    Locality: "",
+    Municipality: "Guadalajara",
+    State: "Jalisco",
+    Country: "México"
+  }
+}
+
 const submitBillingForm = () => {
   form.post("/billing/submit", {
     onSuccess: () => {
@@ -64,9 +80,12 @@ const submitBillingForm = () => {
 <template>
   <LayoutMain>
     <div class="max-w-4xl mx-auto py-8 px-4">
-      <h1 class="text-3xl font-bold text-white mb-6 text-center lg:text-start">
-        Datos para Facturación
+      <div class="flex-col flex gap-0 m-6">
+      <h1 class="text-3xl text-white  text-center 2xl:text-start uppercase">
+        Hotel Ronda Minerva S.A de CV
       </h1>
+      <h2 class="text-2xl text-white text-center uppercase">Generar <a class="text-red-100 underline" target="_blank" href="http://omawww.sat.gob.mx/tramitesyservicios/Paginas/anexo_20.htm">CFDI v4.0</a></h2>
+      </div>
 
       <div class="bg-white/10 backdrop-blur-sm rounded-lg p-6 mb-6">
         <h2 class="text-xl font-semibold text-white mb-4">
@@ -202,7 +221,7 @@ const submitBillingForm = () => {
             <select
               v-model="form.regimenFiscal"
               id="regimenFiscal"
-              class="block mt-2 w-full border-white border-2 rounded-xl p-3 bg-white/10 text-white"
+              class="block mt-2 w-full border-white border-2 rounded-xl p-3 bg-white "
               required
             >
               <option value="" disabled>Selecciona un régimen</option>
@@ -232,7 +251,7 @@ const submitBillingForm = () => {
             <select
               v-model="form.usoCfdi"
               id="usoCfdi"
-              class="block mt-2 w-full border-white border-2 rounded-xl p-3 bg-white/10 text-white"
+              class="block mt-2 w-full border-white border-2 rounded-xl p-3 bg-white"
               required
             >
               <option value="" disabled>Selecciona un uso</option>
