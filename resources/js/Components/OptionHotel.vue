@@ -93,7 +93,7 @@ const errors = {};
                 class="text-white font-extralight text-xl"
               />
               <VTooltip>
-                <span class="bg-white/30 text-sm px-2 rounded-full font-bold italic cursor-help">
+                <span class="bg-white/30 text-sm md:px-2 rounded-full font-bold italic cursor-help ">
                   ?
                 </span>
 
