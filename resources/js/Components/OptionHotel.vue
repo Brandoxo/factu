@@ -86,11 +86,30 @@ const errors = {};
         >
           <div class="text-white flex gap-2 md:gap-4">
             <div>
+              <div class="flex">
               <InputLabel
                 for="ticket-folio"
                 value="ID de Reserva"
                 class="text-white font-extralight text-xl"
               />
+              <VTooltip>
+                <span class="bg-white/30 text-sm px-2 rounded-full font-bold italic cursor-help">
+                  ?
+                </span>
+
+                <template #popper>
+                  <div class="p-2 text-center">
+                    <p class="mb-2 font-bold">Ejemplo de Folio:</p>
+                    <img 
+                      src="/public/assets/img/reservationIDExample.jpeg" 
+                      alt="Ejemplo de ID" 
+                      class="rounded border w-84"
+                    />
+                    <p class="mt-1 text-xs text-gray-500">El ID se encuentra abajo del nombre del huesped.</p>
+                  </div>
+                </template>
+              </VTooltip>
+              </div>
               <input
                 v-model="form.ticketFolio"
                 id="ticket-folio"
