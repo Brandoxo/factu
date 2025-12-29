@@ -8,6 +8,8 @@ import { h } from "vue";
 import Header from "./Components/Header.vue";
 import Footer from "./Components/Footer.vue";
 import "sweetalert2/dist/sweetalert2.min.css";
+import 'floating-vue/dist/style.css'
+import FloatingVue from 'floating-vue'
 
 // Inicializar AOS directamente
 document.addEventListener("DOMContentLoaded", function () {
@@ -31,5 +33,7 @@ createInertiaApp({
     app.component("Header", Header);
     app.component("Footer", Footer);
     app.mount(el);
+    app.use(FloatingVue);
+    return app;
   },
 });

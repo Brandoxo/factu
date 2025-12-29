@@ -19,6 +19,7 @@
     "dependencies": {
         "@inertiajs/vue3": "^2.3.2",
         "aos": "^2.3.4",
+        "floating-vue": "^5.2.2",
         "sweetalert2": "^11.26.17"
     }
 }
