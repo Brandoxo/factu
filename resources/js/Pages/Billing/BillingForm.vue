@@ -4,14 +4,27 @@ import InputLabel from "@/Components/InputLabel.vue";
 import InputError from "@/Components/InputError.vue";
 import LayoutMain from "@/Layouts/LayoutMain.vue";
 import Swal from "sweetalert2";
-
+import { computed } from "vue";
+import taxRegimes from "../../../utils/taxRegimes.js";
+import { createCfdiDataH } from "../../../utils/cfdiDataH.js";
 const props = defineProps({
   reservation: {
     type: Object,
     required: true,
   },
 });
-console.log(props.reservation);
+console.log('este es el balance', props.reservation);
+
+const filteredRegimes = computed(() => {
+  const rfcLength = form.rfc.length;
+  
+  return taxRegimes.filter(regime => {
+    if (rfcLength === 12) return regime.aplica_para.includes("Persona Moral") || regime.aplica_para.includes("Ambos");
+      if (rfcLength === 13) return regime.aplica_para.includes("Persona Física") || regime.aplica_para.includes("Ambos");
+      return true; 
+    });
+  }
+);
 
 const form = useForm({
   reservationID: props.reservation.reservationID,
@@ -40,21 +53,7 @@ if (form.paid > 1) {
   form.paid = "No";
 }
 
-const hotelData ={
-  Name: "Hotel Ronda Minerva S.A de CV",
-  Description: "Hotel de 3 estrellas ubicado en el centro de la ciudad.",
-  Address: {
-    Street: "Av. Adolfo López Mateos Sur",
-    ExteriorNumber: "265",
-    InteriorNumber: "",
-    Neighborhood: "Jardines del bosque",
-    ZipCode: "44520",
-    Locality: "",
-    Municipality: "Guadalajara",
-    State: "Jalisco",
-    Country: "México"
-  }
-}
+const cfdiDataH = createCfdiDataH(form, props.reservation);
 
 const submitBillingForm = () => {
   form.post("/billing/submit", {
@@ -170,7 +169,7 @@ const submitBillingForm = () => {
               v-model="form.razonSocial"
               id="razonSocial"
               type="text"
-              class="block mt-2 w-full border-white border-2 rounded-xl p-3 bg-white/10 text-white placeholder-white/50"
+              class="block mt-2 w-full border-white border-2 rounded-xl p-3 bg-white/10 text-white placeholder-white/50 uppercase"
               placeholder="Nombre o empresa"
               required
             />
@@ -225,19 +224,16 @@ const submitBillingForm = () => {
               required
             >
               <option value="" disabled>Selecciona un régimen</option>
-              <option value="601">601 - General de Ley Personas Morales</option>
-              <option value="603">
-                603 - Personas Morales con Fines no Lucrativos
+              <option v-if="form.rfc.length >= 12"
+                v-for="regime in filteredRegimes"
+                :key="regime.clave"
+                :value="regime.clave"
+              >
+                {{ regime.clave }} - {{ regime.nombre }}
               </option>
-              <option value="605">
-                605 - Sueldos y Salarios e Ingresos Asimilados a Salarios
+              <option v-else disabled>
+                Ingresa un RFC válido para ver los regímenes aplicables
               </option>
-              <option value="606">606 - Arrendamiento</option>
-              <option value="612">
-                612 - Personas Físicas con Actividades Empresariales y
-                Profesionales
-              </option>
-              <option value="621">621 - Régimen de Incorporación Fiscal</option>
             </select>
             <InputError class="mt-2" :message="form.errors.regimenFiscal" />
           </div>
