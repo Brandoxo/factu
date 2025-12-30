@@ -6,14 +6,15 @@ import LayoutMain from "@/Layouts/LayoutMain.vue";
 import Swal from "sweetalert2";
 import { computed } from "vue";
 import taxRegimes from "../../../utils/taxRegimes.js";
-import { createCfdiDataH } from "../../../utils/cfdiDataH.js";
+import { createCfdiData } from "../../../utils/cfdiData.js";
+import { items } from "../../../utils/items.js";
+
 const props = defineProps({
   reservation: {
     type: Object,
     required: true,
   },
 });
-console.log('este es el balance', props.reservation);
 
 const filteredRegimes = computed(() => {
   const rfcLength = form.rfc.length;
@@ -53,7 +54,12 @@ if (form.paid > 1) {
   form.paid = "No";
 }
 
-const cfdiDataH = createCfdiDataH(form, props.reservation);
+// Crear los dato CFDI para la reserva de hotel
+const cfdiDataH = createCfdiData(form, props.reservation, items(props.reservation));
+console.log('estos son los datos cfdi de la reserva', cfdiDataH);
+
+// Crear los dato CFDI para el ticket de restaurante
+// const cfdiDataR = createCfdiData(form, props.ticket, items(props.ticket));
 
 const submitBillingForm = () => {
   form.post("/billing/submit", {
@@ -269,7 +275,7 @@ const submitBillingForm = () => {
         <div class="mt-6 flex gap-4">
           <button
             type="button"
-            @click="$inertia.visit('/')"
+            @click="history.back()"
             class="px-6 py-3 bg-gray-500 text-white rounded-full hover:bg-gray-600 transition-all"
           >
             Cancelar
