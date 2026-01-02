@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\CfdisController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\FrontController;
 
@@ -11,4 +12,4 @@ Route::post('/hotel/submit-form', [FrontController::class, 'submitHotelForm'])->
 
 Route::get('/billing/{reservationID}', [FrontController::class, 'showBillingForm'])->name('billing.form');
 
-Route::post('/billing/generate-invoice', [FrontController::class, 'generateInvoice'])->name('billing.generate.invoice');
+Route::post('/billing/generate-invoice', [CfdisController::class, 'generateInvoice'])->name('billing.generate.invoice');

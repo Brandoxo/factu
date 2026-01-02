@@ -1,5 +1,5 @@
 <script setup>
-import { useForm } from "@inertiajs/vue3";
+import { router, useForm } from "@inertiajs/vue3";
 import InputLabel from "@/Components/InputLabel.vue";
 import InputError from "@/Components/InputError.vue";
 import LayoutMain from "@/Layouts/LayoutMain.vue";
@@ -15,17 +15,30 @@ const props = defineProps({
     required: true,
   },
 });
+console.log("estos son los datos de la reserva", props.reservation);
 
 const filteredRegimes = computed(() => {
   const rfcLength = form.rfc.length;
-  
-  return taxRegimes.filter(regime => {
-    if (rfcLength === 12) return regime.aplica_para.includes("Persona Moral") || regime.aplica_para.includes("Ambos");
-      if (rfcLength === 13) return regime.aplica_para.includes("Persona Física") || regime.aplica_para.includes("Ambos");
-      return true; 
-    });
-  }
-);
+
+  return taxRegimes.filter((regime) => {
+    if (rfcLength === 12)
+      return (
+        regime.aplica_para.includes("Persona Moral") ||
+        regime.aplica_para.includes("Ambos")
+      );
+    if (rfcLength === 13)
+      return (
+        regime.aplica_para.includes("Persona Física") ||
+        regime.aplica_para.includes("Ambos")
+      );
+    return true;
+  });
+});
+
+const getTotalRate = (dailyRates) => {
+  if (!Array.isArray(dailyRates)) return 0;
+  return dailyRates.reduce((sum, item) => sum + (item.rate || 0), 0);
+};
 
 const form = useForm({
   reservationID: props.reservation.reservationID,
@@ -54,15 +67,15 @@ if (form.paid > 1) {
   form.paid = "No";
 }
 
-// Crear los dato CFDI para la reserva de hotel
-const cfdiDataH = createCfdiData(form, props.reservation, items(props.reservation));
-console.log('estos son los datos cfdi de la reserva', cfdiDataH);
-
-// Crear los dato CFDI para el ticket de restaurante
-// const cfdiDataR = createCfdiData(form, props.ticket, items(props.ticket));
-
 const submitBillingForm = () => {
-  form.post("/billing/submit", {
+  // Crear los datos CFDI con los valores actuales del formulario
+  const cfdiDataH = createCfdiData(form, items(props.reservation));
+
+  console.log("estos son los datos cfdi de la reserva", cfdiDataH);
+
+  router.post("/billing/generate-invoice", {
+    cfdiData: cfdiDataH,
+
     onSuccess: () => {
       Swal.fire({
         icon: "success",
@@ -86,56 +99,66 @@ const submitBillingForm = () => {
   <LayoutMain>
     <div class="max-w-4xl mx-auto py-8 px-4">
       <div class="flex-col flex gap-0 m-6">
-      <h1 class="text-3xl text-white  text-center 2xl:text-start uppercase">
-        Hotel Ronda Minerva S.A de CV
-      </h1>
-      <h2 class="text-2xl text-white text-center uppercase">Generar <a class="text-red-100 underline" target="_blank" href="http://omawww.sat.gob.mx/tramitesyservicios/Paginas/anexo_20.htm">CFDI v4.0</a></h2>
+        <h1 class="text-3xl text-white text-center uppercase">
+          Hotel Ronda Minerva S.A de CV
+        </h1>
+        <h2 class="text-2xl text-white text-center uppercase">
+          Generar
+          <a
+            class="text-red-100 underline"
+            target="_blank"
+            href="http://omawww.sat.gob.mx/tramitesyservicios/Paginas/anexo_20.htm"
+            >CFDI v4.0</a
+          >
+        </h2>
       </div>
 
-      <div class="bg-white/10 backdrop-blur-sm rounded-lg p-6 mb-6">
+      <div
+        v-for="room in reservation.assigned"
+        class="bg-white/10 backdrop-blur-sm rounded-lg p-6 mb-6"
+      >
         <h2 class="text-xl font-semibold text-white mb-4">
           Información de la Reserva
+          {{ 1 + reservation.assigned.indexOf(room) }}
         </h2>
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-white">
+        <div class="grid grid-cols-2 lg:grid-cols-3 gap-4 text-white">
           <div>
-            <p class="text-sm opacity-75">Huésped</p>
+            <p class="text-sm opacity-75">A nombre de:</p>
             <p class="font-semibold">{{ reservation.guestName }}</p>
           </div>
           <div>
             <p class="text-sm opacity-75">ID de Reserva</p>
-            <p class="font-semibold">{{ reservation.reservationID }}</p>
-          </div>
-          <div>
-            <p class="text-sm opacity-75">Fecha de inicio</p>
-            <p class="font-semibold">{{ reservation.startDate }}</p>
-          </div>
-          <div>
-            <p class="text-sm opacity-75">Fecha de salida</p>
-            <p class="font-semibold">{{ reservation.endDate || "N/A" }}</p>
+            <p class="font-semibold">{{ room.subReservationID }}</p>
           </div>
           <div>
             <p class="text-sm opacity-75">Número de habitación</p>
-            <p class="font-semibold">{{ reservation.assigned[0].roomName }}</p>
+            <p class="font-semibold">{{ room.roomName }}</p>
           </div>
           <div>
-            <p class="text-sm opacity-75">Total</p>
-            <p class="font-semibold">${{ reservation.total }}</p>
-          </div>
-          <div>
-            <p class="text-sm opacity-75">Impuestos</p>
-            <p class="font-semibold">{{ form.taxes }}</p>
+            <p class="text-sm opacity-75">Habitación</p>
+            <p class="font-semibold">{{ room.roomTypeName }}</p>
           </div>
           <div>
             <p class="text-sm opacity-75">Adultos</p>
-            <p class="font-semibold">{{ reservation.assigned[0].adults }}</p>
+            <p class="font-semibold">{{ room.adults }}</p>
           </div>
           <div>
             <p class="text-sm opacity-75">Niños</p>
-            <p class="font-semibold">{{ reservation.assigned[0].children }}</p>
+            <p class="font-semibold">{{ room.children }}</p>
           </div>
           <div>
-            <p class="text-sm opacity-75">Pagado</p>
-            <p class="font-semibold">{{ form.paid }}</p>
+            <p class="text-sm opacity-75">Fecha de inicio</p>
+            <p class="font-semibold">{{ room.startDate }}</p>
+          </div>
+          <div>
+            <p class="text-sm opacity-75">Fecha de salida</p>
+            <p class="font-semibold">{{ room.endDate || "N/A" }}</p>
+          </div>
+          <div>
+            <p class="text-sm opacity-75">Total</p>
+            <p class="font-semibold">
+              ${{ getTotalRate(room.dailyRates) }} MXN
+            </p>
           </div>
         </div>
       </div>
@@ -157,7 +180,7 @@ const submitBillingForm = () => {
               v-model="form.rfc"
               id="rfc"
               type="text"
-              class="block mt-2 w-full border-white border-2 rounded-xl p-3 bg-white/10 text-white placeholder-white/50"
+              class="block mt-2 w-full border-white border-2 rounded-xl p-3 bg-white/10 text-white placeholder-white/50 uppercase"
               placeholder="XAXX010101000"
               required
               maxlength="13"
@@ -226,11 +249,12 @@ const submitBillingForm = () => {
             <select
               v-model="form.regimenFiscal"
               id="regimenFiscal"
-              class="block mt-2 w-full border-white border-2 rounded-xl p-3 bg-white "
+              class="block mt-2 w-full border-white border-2 rounded-xl p-3 bg-white"
               required
             >
               <option value="" disabled>Selecciona un régimen</option>
-              <option v-if="form.rfc.length >= 12"
+              <option
+                v-if="form.rfc.length >= 12"
                 v-for="regime in filteredRegimes"
                 :key="regime.clave"
                 :value="regime.clave"
