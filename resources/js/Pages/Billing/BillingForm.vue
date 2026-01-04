@@ -8,6 +8,7 @@ import { computed } from "vue";
 import taxRegimes from "../../../utils/taxRegimes.js";
 import { createCfdiData } from "../../../utils/cfdiData.js";
 import { items } from "../../../utils/items.js";
+import { getTotalRate } from "../../../utils/helpers.js";
 
 const props = defineProps({
   reservation: {
@@ -35,10 +36,6 @@ const filteredRegimes = computed(() => {
   });
 });
 
-const getTotalRate = (dailyRates) => {
-  if (!Array.isArray(dailyRates)) return 0;
-  return dailyRates.reduce((sum, item) => sum + (item.rate || 0), 0);
-};
 
 const form = useForm({
   reservationID: props.reservation.reservationID,
@@ -61,11 +58,6 @@ const form = useForm({
   usoCfdi: "",
 });
 
-if (form.paid > 1) {
-  form.paid = "Sí";
-} else {
-  form.paid = "No";
-}
 
 const submitBillingForm = () => {
   // Crear los datos CFDI con los valores actuales del formulario
