@@ -17,6 +17,7 @@ export const items = (reservation) => {
       Quantity: 1, //Cantidad de noches o servicios, generalmente 1 por Item
       Subtotal: roomSubtotal, //Subtotal antes de impuestos
       Discount: 0.0, //Descuento aplicado, si es que hay alguno
+      TaxObject: "02", //Objeto del impuesto, "02" para servicios gravados
 
       // Impuestos aplicables
       Taxes: [
