@@ -1,4 +1,19 @@
+import { getTotalRate } from "./helpers.js";
+
 export const createCfdiData = (form, items) => {
+  // Calcular el total de ISH basado en los items
+  let totalIsh = 0;
+  items.forEach((item) => {
+    // Buscar la habitación asignada correspondiente al item
+    const room = item.assigned ? item.assigned[0] : null;
+    if (room) {
+      const roomSubtotal = getTotalRate(room.dailyRates);
+      const ish = Number((roomSubtotal * 0.04).toFixed(2)); // 4% de ISH
+      totalIsh += ish;
+      console.log(`ISH para la habitación ${room.roomName}: ${ish}`);
+    }
+  });
+
   return {
     Serie: "H", //Serie que identifica el tipo de comprobante, en este caso "H" para hotelería
     Currency: "MXN", //Moneda en la que se emite el comprobante
@@ -25,13 +40,13 @@ export const createCfdiData = (form, items) => {
       Any: [
         {
           ImpuestosLocales: {
-            TotalDeTraslados: 30.0, // Suma de todos los importes de ISH
+            TotalDeTraslados: totalIsh, // Suma de todos los importes de ISH
             TotalDeRetenciones: 0,
             TrasladosLocales: [
               {
                 ImpLocTrasladado: "ISH",
-                TasadeTraslado: 3.0, // Tasa (ej. 3.00 para 3%)
-                Importe: 30.0, // Subtotal de la habitación * 0.03
+                TasadeTraslado: 4.0, // Tasa (ej. 3.00 para 3%)
+                Importe: totalIsh, // Subtotal de la habitación * 0.03
               },
             ],
           },
