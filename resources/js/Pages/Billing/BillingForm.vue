@@ -9,6 +9,7 @@ import taxRegimes from "../../../utils/taxRegimes.js";
 import { createCfdiData } from "../../../utils/cfdiData.js";
 import { items } from "../../../utils/items.js";
 import { getTotalRate } from "../../../utils/helpers.js";
+import axios from 'axios';
 
 const props = defineProps({
   reservation: {
@@ -58,32 +59,26 @@ const form = useForm({
   usoCfdi: "",
 });
 
+const subtotal = Number(props.reservation.balanceDetailed.subTotal);
 
-const submitBillingForm = () => {
-  // Crear los datos CFDI con los valores actuales del formulario
-  const cfdiDataH = createCfdiData(form, items(props.reservation));
+const submitBillingForm = async () => {
+  const cfdiDataH = await createCfdiData(form, items(props.reservation), subtotal);
+  
+  console.log("Enviando a Facturama..." , cfdiDataH);
 
-  console.log("estos son los datos cfdi de la reserva", cfdiDataH);
+  try {
+    const response = await axios.post("/billing/generate-invoice", {
+      cfdiData: cfdiDataH,
+    });
 
-  router.post("/billing/generate-invoice", {
-    cfdiData: cfdiDataH,
+    console.log("Respuesta Exitosa:", response.data);
+    Swal.fire("¡Éxito!", "Factura creada: " + response.data.body.Id, "success");
 
-    onSuccess: () => {
-      Swal.fire({
-        icon: "success",
-        title: "¡Factura generada!",
-        text: "Se ha enviado a tu correo electrónico.",
-        confirmButtonText: "Aceptar",
-      });
-    },
-    onError: (errors) => {
-      Swal.fire({
-        icon: "error",
-        title: "Error",
-        text: "Revisa los campos del formulario",
-      });
-    },
-  });
+  } catch (error) {
+    console.error("Error en la petición:", error.response.data);
+    
+    Swal.fire("Error", "No se pudo crear la factura.", "error");
+  }
 };
 </script>
 
