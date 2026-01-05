@@ -108,14 +108,22 @@ const submitBillingForm = async () => {
           Información de la Reserva
           {{ 1 + reservation.assigned.indexOf(room) }}
         </h2>
-        <div class="grid grid-cols-2 lg:grid-cols-3 gap-4 text-white">
+        <div class="grid grid-cols-2 lg:grid-cols-5 gap-4 text-white">
+          <div>
+            <p class="text-sm opacity-75">ID de Reserva</p>
+            <p class="font-semibold">{{ room.subReservationID }}</p>
+          </div>
           <div>
             <p class="text-sm opacity-75">A nombre de:</p>
             <p class="font-semibold">{{ reservation.guestName }}</p>
           </div>
           <div>
-            <p class="text-sm opacity-75">ID de Reserva</p>
-            <p class="font-semibold">{{ room.subReservationID }}</p>
+            <p class="text-sm opacity-75">Fecha de inicio</p>
+            <p class="font-semibold">{{ room.startDate }}</p>
+          </div>
+          <div>
+            <p class="text-sm opacity-75">Fecha de salida</p>
+            <p class="font-semibold">{{ room.endDate || "N/A" }}</p>
           </div>
           <div>
             <p class="text-sm opacity-75">Número de habitación</p>
@@ -134,20 +142,33 @@ const submitBillingForm = async () => {
             <p class="font-semibold">{{ room.children }}</p>
           </div>
           <div>
-            <p class="text-sm opacity-75">Fecha de inicio</p>
-            <p class="font-semibold">{{ room.startDate }}</p>
-          </div>
-          <div>
-            <p class="text-sm opacity-75">Fecha de salida</p>
-            <p class="font-semibold">{{ room.endDate || "N/A" }}</p>
-          </div>
-          <div>
-            <p class="text-sm opacity-75">Total</p>
+            <p class="text-sm opacity-75">Impuesto ISH</p>
             <p class="font-semibold">
-              ${{ getTotalRate(room.dailyRates) }} MXN
+              ${{ Number(getTotalRate(room.dailyRates) * 0.04).toFixed(2) }} MXN
+            </p>
+          </div>
+          <div>
+            <p class="text-sm opacity-75">Total + IVA</p>
+            <p class="font-semibold">
+              ${{ Number(getTotalRate(room.dailyRates) * 1.16).toFixed(2) }} MXN
             </p>
           </div>
         </div>
+      </div>
+
+      <div v-if="reservation.balanceDetailed.additionalItems > 0" class="bg-white/10 backdrop-blur-sm rounded-t-lg p-2 px-2 mt-0 text-white flex  w-fit mx-auto gap-2">
+        <h3 class="text-sm mb-2">Complementos:
+        </h3>
+        <span class="font-semibold text-sm">
+          ${{ Number(reservation.balanceDetailed.additionalItems).toFixed(2) }} MXN
+        </span>
+      </div>
+
+      <div class="bg-white/10 backdrop-blur-sm rounded-b-lg p-6 mb-6 text-white text-center">
+        <h2 class="">
+         Total a facturar:
+          <span class="text-lg font-semibold underline">${{ Number(reservation.total).toFixed(2) }} MXN</span>
+        </h2>
       </div>
 
       <form
