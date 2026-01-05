@@ -3,18 +3,25 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Http;
+
 
 class CfdisController extends Controller
 {
     public function generateInvoice(Request $request)
-    {
-        // Lógica para generar la factura CFDI
-        $data = $request->all();
-        // Aquí iría la lógica para generar la factura basada en el reservationID
+{
+    $username = env('FACTURAMA_USERAGENT');
+    $password = env('FACTURAMA_PASSWORD');
+    
+    $datosCfdi = $request->input('cfdiData');
 
-        return response()->json([
-            'message' => 'Invoice generated successfully',
-            'data' => $data,
-        ]);
-    }
+    $response = Http::withBasicAuth($username, $password)
+        ->withoutVerifying()
+        ->post('https://apisandbox.facturama.mx/3/cfdis', $datosCfdi);
+
+    return response()->json([
+        'status' => $response->status(),
+        'body' => $response->json()
+    ], $response->status());
+}
 }
