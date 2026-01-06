@@ -162,6 +162,28 @@ const submitBillingForm = async () => {
         <span class="font-semibold text-sm">
           ${{ Number(reservation.balanceDetailed.additionalItems).toFixed(2) }} MXN
         </span>
+        
+              <VTooltip>
+                <span class="bg-white/30 text-sm px-2 rounded-full font-bold italic cursor-help">
+                  ?
+                </span>
+
+                <template #popper>
+                  <div class="p-2">
+                    <p class="mb-2 font-bold text-center">Servicios adicionales</p>
+                    <ul class="text-sm text-gray-100 list-disc list-inside">
+                      <li>Llegada anticipada</li>
+                      <li>Salida Tardía</li>
+                      <li>Persona Extra</li>
+                      <li>Servicio de Lavandería</li>
+                    </ul>
+                    <div class="mt-2 text-xs text-gray-300 text-center">
+                    <p>Los costos de estos servicios se incluyen en el total a facturar.</p>
+                    <p>(Pueden variar)</p>
+                    </div>
+                  </div>
+                </template>
+              </VTooltip>
       </div>
 
       <div class="bg-white/10 backdrop-blur-sm rounded-b-lg p-6 mb-6 text-white text-center">
