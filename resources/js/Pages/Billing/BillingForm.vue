@@ -4,12 +4,15 @@ import InputLabel from "@/Components/InputLabel.vue";
 import InputError from "@/Components/InputError.vue";
 import LayoutMain from "@/Layouts/LayoutMain.vue";
 import Swal from "sweetalert2";
-import { computed } from "vue";
+import { computed, ref } from "vue";
 import taxRegimes from "../../../utils/taxRegimes.js";
 import { createCfdiData } from "../../../utils/cfdiData.js";
 import { items } from "../../../utils/items.js";
 import { getTotalRate } from "../../../utils/helpers.js";
 import axios from 'axios';
+import { paymentMethods } from "../../../utils/paymentMethods.js";
+import { usoCfdOptions } from "../../../utils/usoCfdi.js";
+import { calculateIsh } from "../../../utils/helpers.js";
 
 const props = defineProps({
   reservation: {
@@ -18,6 +21,15 @@ const props = defineProps({
   },
 });
 console.log("estos son los datos de la reserva", props.reservation);
+
+//Año para ISH
+const yearReservation = props.reservation.startDate.slice(0,4);
+
+// Estado reactivo para trackear qué habitaciones están incluidas
+const selectedRooms = ref(props.reservation.assigned.map(() => true));
+
+// Estado reactivo para trackear si los items adicionales están incluidos
+const includeAdditionalItems = ref(true);
 
 const filteredRegimes = computed(() => {
   const rfcLength = form.rfc.length;
@@ -37,32 +49,67 @@ const filteredRegimes = computed(() => {
   });
 });
 
+// Computed para calcular el total dinámicamente
+const totalToInvoice = computed(() => {
+  let total = 0;
+  
+  // Sumar habitaciones seleccionadas
+  props.reservation.assigned.forEach((room, index) => {
+    if (selectedRooms.value[index]) {
+      const roomSubtotal = getTotalRate(room.dailyRates);
+      const roomIsh = calculateIsh(room.roomTotal, yearReservation);
+      total += (roomSubtotal) * 1.16 + roomIsh; // Incluye IVA
+    }
+  });
+  
+  // Agregar complementos si están seleccionados y hay habitaciones seleccionadas
+  if (includeAdditionalItems.value && selectedRooms.value.some(selected => selected) && props.reservation.balanceDetailed.additionalItems > 0) {
+    total += Number(props.reservation.balanceDetailed.additionalItems); // Incluye IVA
+  }
+  
+  return Number(total.toFixed(2));
+});
+
+// Computed para obtener los items filtrados
+const selectedItems = computed(() => {
+  const allItems = items(props.reservation);
+  const roomCount = props.reservation.assigned.length;
+  
+  // Filtrar items de habitaciones según selección
+  const filteredRoomItems = allItems.slice(0, roomCount).filter((_, index) => selectedRooms.value[index]);
+  
+  // Si hay items adicionales y están seleccionados
+  if (allItems.length > roomCount && includeAdditionalItems.value) {
+    return [...filteredRoomItems, ...allItems.slice(roomCount)];
+  }
+  
+  return filteredRoomItems;
+});
+
+// Computed para el subtotal
+const selectedSubtotal = computed(() => {
+  let subtotal = 0;
+  props.reservation.assigned.forEach((room, index) => {
+    if (selectedRooms.value[index]) {
+      subtotal += getTotalRate(room.dailyRates);
+    }
+  });
+  return Number(subtotal.toFixed(2));
+});
+
 
 const form = useForm({
-  reservationID: props.reservation.reservationID,
-  guestName: props.reservation.guestName,
-  startDate: props.reservation.startDate,
-  endDate: props.reservation.endDate,
-  roomNumber: props.reservation.assigned[0].roomName,
-  adults: props.reservation.assigned[0].adults,
-  children: props.reservation.assigned[0].children,
-  paid: props.reservation.balanceDetailed.paid,
-
-  taxes: "%16",
-  total: props.reservation.total,
-
   rfc: "",
   razonSocial: "",
   email: "",
   codigoPostal: "",
   regimenFiscal: "",
   usoCfdi: "",
+  paymentMethod: "",
 });
 
-const subtotal = Number(props.reservation.balanceDetailed.subTotal);
-
 const submitBillingForm = async () => {
-  const cfdiDataH = await createCfdiData(form, items(props.reservation), subtotal);
+  const cfdiDataH = await createCfdiData(form, selectedItems.value);
   
   console.log("Enviando a Facturama..." , cfdiDataH);
 
@@ -104,6 +151,7 @@ const submitBillingForm = async () => {
         v-for="room in reservation.assigned"
         class="bg-white/10 backdrop-blur-sm rounded-lg p-6 mb-6"
       >
+      <div>
         <h2 class="text-xl font-semibold text-white mb-4">
           Información de la Reserva
           {{ 1 + reservation.assigned.indexOf(room) }}
@@ -144,7 +192,7 @@ const submitBillingForm = async () => {
           <div>
             <p class="text-sm opacity-75">Impuesto ISH</p>
             <p class="font-semibold">
-              ${{ Number(getTotalRate(room.dailyRates) * 0.04).toFixed(2) }} MXN
+              ${{ Number(calculateIsh(getTotalRate(room.dailyRates), yearReservation)).toFixed(2) }} MXN
             </p>
           </div>
           <div>
@@ -154,52 +202,112 @@ const submitBillingForm = async () => {
             </p>
           </div>
         </div>
+        </div>
+
+        <div class="mt-4 text-center">
+          <input 
+            type="checkbox" 
+            :id="'includeRoom' + reservation.assigned.indexOf(room)" 
+            v-model="selectedRooms[reservation.assigned.indexOf(room)]" 
+            class="mt-4 w-4 h-4 cursor-pointer"
+          />
+          <label 
+            :for="'includeRoom' + reservation.assigned.indexOf(room)" 
+            class="text-white ml-2 cursor-pointer"
+          >
+            Incluir esta habitación en la factura
+          </label>
+        </div>
+
       </div>
 
-      <div v-if="reservation.balanceDetailed.additionalItems > 0" class="bg-white/10 backdrop-blur-sm rounded-t-lg p-2 px-2 mt-0 text-white flex  w-fit mx-auto gap-2">
-        <h3 class="text-sm mb-2">Complementos:
-        </h3>
-        <span class="font-semibold text-sm">
-          ${{ Number(reservation.balanceDetailed.additionalItems).toFixed(2) }} MXN
-        </span>
-        
-              <VTooltip>
-                <span class="bg-white/30 text-sm px-2 rounded-full font-bold italic cursor-help">
-                  ?
-                </span>
+      <div v-if="reservation.balanceDetailed.additionalItems > 0" class="bg-white/10 backdrop-blur-sm rounded-lg p-4 mt-0 text-white">
+        <div class="flex w-fit mx-auto gap-2 mb-3">
+          <h3 class="text-sm">Complementos:
+          </h3>
+          <span class="font-semibold text-sm">
+            ${{ Number(reservation.balanceDetailed.additionalItems).toFixed(2) }} MXN
+          </span>
+          
+                <VTooltip>
+                  <span class="bg-white/30 text-sm px-2 rounded-full font-bold italic cursor-help">
+                    ?
+                  </span>
 
-                <template #popper>
-                  <div class="p-2">
-                    <p class="mb-2 font-bold text-center">Servicios adicionales</p>
-                    <ul class="text-sm text-gray-100 list-disc list-inside">
-                      <li>Llegada anticipada</li>
-                      <li>Salida Tardía</li>
-                      <li>Persona Extra</li>
-                      <li>Servicio de Lavandería</li>
-                    </ul>
-                    <div class="mt-2 text-xs text-gray-300 text-center">
-                    <p>Los costos de estos servicios se incluyen en el total a facturar.</p>
-                    <p>(Pueden variar)</p>
+                  <template #popper>
+                    <div class="p-2">
+                      <p class="mb-2 font-bold text-center">Servicios adicionales</p>
+                      <ul class="text-sm text-gray-100 list-disc list-inside">
+                        <li>Llegada anticipada</li>
+                        <li>Salida Tardía</li>
+                        <li>Persona Extra</li>
+                        <li>Servicio de Lavandería</li>
+                      </ul>
+                      <div class="mt-2 text-xs text-gray-300 text-center">
+                      <p>Los costos de estos servicios se incluyen en el total a facturar.</p>
+                      <p>(Pueden variar)</p>
+                      </div>
                     </div>
-                  </div>
-                </template>
-              </VTooltip>
+                  </template>
+                </VTooltip>
+        </div>
+        
+        <div class="text-center">
+          <input 
+            type="checkbox" 
+            id="includeAdditionalItems" 
+            v-model="includeAdditionalItems" 
+            class="w-4 h-4 cursor-pointer"
+          />
+          <label 
+            for="includeAdditionalItems" 
+            class="text-white ml-2 cursor-pointer"
+          >
+            Incluir complementos en la factura
+          </label>
+        </div>
       </div>
 
       <div class="bg-white/10 backdrop-blur-sm rounded-b-lg p-6 mb-6 text-white text-center">
         <h2 class="">
          Total a facturar:
-          <span class="text-lg font-semibold underline">${{ Number(reservation.total).toFixed(2) }} MXN</span>
+          <span class="text-lg font-semibold underline">${{ totalToInvoice }} MXN</span>
         </h2>
+        <p v-if="!selectedRooms.some(selected => selected)" class="text-red-300 text-sm mt-2">
+          ⚠️ Debes seleccionar al menos una habitación para facturar
+        </p>
       </div>
-
+      
       <form
         @submit.prevent="submitBillingForm"
-        class="bg-white/10 backdrop-blur-sm rounded-lg p-6"
+        class=""
       >
+      <div class="bg-white/10 backdrop-blur-sm rounded-lg p-6 mb-6">
+      <h2 class="text-xl font-semibold text-white mb-4 text-center">¿Cuál fué el método de pago?</h2>
+          <div>
+            <select
+              v-model="form.paymentMethod"
+              id="paymentMethod"
+              class="block mt-2 w-full border-white border-2 rounded-xl p-3 bg-white"
+              required
+            >
+              <option value="" disabled>Selecciona el método que se uso</option>
+              <option
+                v-for="method in paymentMethods"
+                :key="method.value"
+                :value="method.value"
+              >
+                {{ method.value }} - {{ method.name }}
+              </option>
+            </select>
+            <InputError class="mt-2" :message="form.errors.paymentMethod" />
+          </div>
+      </div>
+
+        <div class="bg-white/10 backdrop-blur-sm rounded-lg p-6 mb-6">
         <h2 class="text-xl font-semibold text-white mb-4">Datos Fiscales</h2>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 ">
           <div>
             <InputLabel
               for="rfc"
@@ -311,16 +419,13 @@ const submitBillingForm = async () => {
               required
             >
               <option value="" disabled>Selecciona un uso</option>
-              <option value="G01">G01 - Adquisición de mercancías</option>
-              <option value="G02">
-                G02 - Devoluciones, descuentos o bonificaciones
+              <option
+                v-for="uso in usoCfdOptions"
+                :key="uso.value"
+                :value="uso.value"
+              >
+                {{ uso.value }} - {{ uso.label }}
               </option>
-              <option value="G03">G03 - Gastos en general</option>
-              <option value="I01">I01 - Construcciones</option>
-              <option value="I02">
-                I02 - Mobilario y equipo de oficina por inversiones
-              </option>
-              <option value="P01">P01 - Por definir</option>
             </select>
             <InputError class="mt-2" :message="form.errors.usoCfdi" />
           </div>
@@ -336,11 +441,12 @@ const submitBillingForm = async () => {
           </button>
           <button
             type="submit"
-            :disabled="form.processing"
+            :disabled="form.processing || !selectedRooms.some(selected => selected)"
             class="flex-1 px-6 py-3 bg-blue-600 text-white rounded-full hover:bg-blue-700 disabled:opacity-50 transition-all"
           >
             {{ form.processing ? "Generando..." : "Generar Factura" }}
           </button>
+        </div>
         </div>
       </form>
     </div>
