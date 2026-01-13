@@ -24,6 +24,23 @@ console.log("estos son los datos de la reserva", props.reservation);
 
 //Año para ISH
 const yearReservation = props.reservation.startDate.slice(0,4);
+const taxesIncluded = props.reservation.balanceDetailed.taxesFees;
+const isTaxable = taxesIncluded === 0 ? true : false;
+
+const displayRoomTotal = (room) => {
+  const subtotal = getTotalRate(room.dailyRates);
+  const ish = calculateIsh(subtotal, yearReservation);
+
+  if (isTaxable) {
+    // Impuestos incluidos: mostrar subtotal menos ISH
+    let totalBase = Number((subtotal / 1.21).toFixed(2));
+    console.log("Total base sin impuestos:", totalBase);
+    return totalBase.toFixed(2);
+  }
+
+  const iva = subtotal * 0.16;
+  return Number((subtotal + iva + ish).toFixed(2));
+};
 
 // Estado reactivo para trackear qué habitaciones están incluidas
 const selectedRooms = ref(props.reservation.assigned.map(() => true));
@@ -56,15 +73,23 @@ const totalToInvoice = computed(() => {
   // Sumar habitaciones seleccionadas
   props.reservation.assigned.forEach((room, index) => {
     if (selectedRooms.value[index]) {
-      const roomSubtotal = getTotalRate(room.dailyRates);
-      const roomIsh = calculateIsh(room.roomTotal, yearReservation);
-      total += (roomSubtotal) * 1.16 + roomIsh; // Incluye IVA
+      let roomSubtotal = getTotalRate(room.dailyRates);
+      
+      if (!isTaxable) {
+        // Los impuestos NO están incluidos: sumar subtotal + impuestos
+        const ish = calculateIsh(roomSubtotal, yearReservation);
+        const iva = roomSubtotal * 0.16;
+        total += Number((roomSubtotal + iva + ish).toFixed(2));
+      } else {
+        // Los impuestos SÍ están incluidos: el subtotal ya es el total
+        total += Number(roomSubtotal.toFixed(2));
+      }
     }
   });
   
   // Agregar complementos si están seleccionados y hay habitaciones seleccionadas
   if (includeAdditionalItems.value && selectedRooms.value.some(selected => selected) && props.reservation.balanceDetailed.additionalItems > 0) {
-    total += Number(props.reservation.balanceDetailed.additionalItems); // Incluye IVA
+    total += Number(props.reservation.balanceDetailed.additionalItems);
   }
   
   return Number(total.toFixed(2));
@@ -86,17 +111,6 @@ const selectedItems = computed(() => {
   return filteredRoomItems;
 });
 
-// Computed para el subtotal
-const selectedSubtotal = computed(() => {
-  let subtotal = 0;
-  props.reservation.assigned.forEach((room, index) => {
-    if (selectedRooms.value[index]) {
-      subtotal += getTotalRate(room.dailyRates);
-    }
-  });
-  return Number(subtotal.toFixed(2));
-});
-
 
 const form = useForm({
   rfc: "",
@@ -109,6 +123,14 @@ const form = useForm({
 });
 
 const submitBillingForm = async () => {
+  Swal.fire({
+    title: "Generando factura...",
+    text: "Por favor espera mientras se crea tu factura.",
+    allowOutsideClick: false,
+    didOpen: () => {
+      Swal.showLoading();
+    },
+  });
   const cfdiDataH = await createCfdiData(form, selectedItems.value);
   
   console.log("Enviando a Facturama..." , cfdiDataH);
@@ -192,13 +214,13 @@ const submitBillingForm = async () => {
           <div>
             <p class="text-sm opacity-75">Impuesto ISH</p>
             <p class="font-semibold">
-              ${{ Number(calculateIsh(getTotalRate(room.dailyRates), yearReservation)).toFixed(2) }} MXN
+              ${{ isTaxable ? Number(calculateIsh(displayRoomTotal(room), yearReservation)).toFixed(2) : Number(calculateIsh(getTotalRate(room.dailyRates), yearReservation)).toFixed(2) }} MXN
             </p>
           </div>
           <div>
             <p class="text-sm opacity-75">Total + IVA</p>
             <p class="font-semibold">
-              ${{ Number(getTotalRate(room.dailyRates) * 1.16).toFixed(2) }} MXN
+              ${{ isTaxable ? Number((displayRoomTotal(room)) * 1.16).toFixed(2) : Number(getTotalRate(room.dailyRates) * 1.16).toFixed(2) }} MXN
             </p>
           </div>
         </div>
@@ -442,7 +464,7 @@ const submitBillingForm = async () => {
           <button
             type="submit"
             :disabled="form.processing || !selectedRooms.some(selected => selected)"
-            class="flex-1 px-6 py-3 bg-blue-600 text-white rounded-full hover:bg-blue-700 disabled:opacity-50 transition-all"
+            class="flex-1 px-6 py-3 bg-blue-600 text-white rounded-full hover:bg-blue-700 disabled:opacity-50 transition-all cursor-pointer"
           >
             {{ form.processing ? "Generando..." : "Generar Factura" }}
           </button>
