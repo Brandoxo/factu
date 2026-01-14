@@ -13,6 +13,7 @@ import axios from 'axios';
 import { paymentMethods } from "../../../utils/paymentMethods.js";
 import { usoCfdOptions } from "../../../utils/usoCfdi.js";
 import { calculateIsh } from "../../../utils/helpers.js";
+import { ishWithIvaPercent } from "../../../utils/helpers.js";
 
 const props = defineProps({
   reservation: {
@@ -33,7 +34,7 @@ const displayRoomTotal = (room) => {
 
   if (isTaxable) {
     // Impuestos incluidos: mostrar subtotal menos ISH
-    let totalBase = Number((subtotal / 1.21).toFixed(2));
+    let totalBase = Number((subtotal / (1 + ishWithIvaPercent[yearReservation] || ishWithIvaPercent['default'])).toFixed(2));
     console.log("Total base sin impuestos:", totalBase);
     return totalBase.toFixed(2);
   }

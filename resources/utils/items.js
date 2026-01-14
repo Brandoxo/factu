@@ -1,6 +1,7 @@
 import { getTotalRate } from "./helpers";
 import { calculateIsh } from "./helpers.js";
 import { additionalItems } from "./additionalItems.js";
+import { ishWithIvaPercent } from "./helpers.js";
 
 export const items = (reservation) => {
   // Generar items de habitaciones
@@ -24,7 +25,8 @@ export const items = (reservation) => {
       } else {
         // Los impuestos SÍ están incluidos: extraer el subtotal base
         roomTotal = roomSubtotal; // El total ya incluye los impuestos
-        roomSubtotal = Number((roomTotal / 1.21).toFixed(2)); // Dividir entre 1.21 (1 + 0.16 + 0.04)
+        roomSubtotal = Number((roomTotal / (1 + ishWithIvaPercent[reservation.startDate.slice(0,4)] || ishWithIvaPercent['default'])).toFixed(2)); // Dividir entre 1.21 (1 + 0.16 + 0.04)
+        console.log('Subtotal base calculado de total con impuestos incluidos:', roomSubtotal);
         iva = Number((roomSubtotal * 0.16).toFixed(2));
         ish = Number((roomTotal - roomSubtotal - iva).toFixed(2)); // Ajustar ISH para que cuadre exacto
         console.log('Impuestos incluidos - Total:', roomTotal, 'Subtotal base:', roomSubtotal, 'IVA:', iva, 'ISH:', ish);

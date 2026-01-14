@@ -14,3 +14,9 @@ export const calculateIsh = (subtotal, reservationDate) => {
   let totalIsh = Number((subtotal * Ish).toFixed(2));
   return totalIsh;
 };
+
+export const ishWithIvaPercent = 
+{
+  '2026': 0.21,
+  'default': 0.20
+};
