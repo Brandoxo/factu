@@ -142,7 +142,10 @@ const submitBillingForm = async () => {
     });
 
     console.log("Respuesta Exitosa:", response.data);
-    Swal.fire("¡Éxito!", "Factura creada: " + response.data.body.Id, "success");
+    console.log("Factura creada con ID:", response.data.id);
+    console.log("XML:", response.data.files.xml);
+    console.log("PDF:", response.data.files.pdf);
+    Swal.fire("¡Éxito!", "Factura creada: " + response.data.id, "success");
 
   } catch (error) {
     console.error("Error en la petición:", error.response.data);
