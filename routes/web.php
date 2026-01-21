@@ -10,6 +10,6 @@ Route::post('/restaurant/submit-form', [FrontController::class, 'submitRestauran
 
 Route::post('/hotel/submit-form', [FrontController::class, 'submitHotelForm'])->name('hotel.submit.form');
 
-Route::get('/billing/{reservationID}', [FrontController::class, 'showBillingForm'])->name('billing.form');
+Route::get('/billing/{reservationID}', [FrontController::class, 'showBillingForm'])->middleware('signed')->name('billing.form');
 
 Route::post('/billing/generate-invoice', [CfdisController::class, 'generateInvoice'])->name('billing.generate.invoice');
