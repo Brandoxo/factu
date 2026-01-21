@@ -1,0 +1,17 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Model;
+
+class InvoiceTax extends Model
+{
+    protected $table = 'invoice_taxes';
+
+    protected $fillable = [
+        'invoice_id',
+        'tax_type',
+        'rate',
+        'amount',
+    ];
+}
