@@ -54,8 +54,8 @@ class CfdisController extends Controller
         ], 500);
     }
 
-    \Storage::put("cfdis/{$id}.xml", $xml->body());
-    \Storage::put("cfdis/{$id}.pdf", $pdf->body());
+    Storage::put("cfdis/{$id}.xml", $xml->body());
+    Storage::put("cfdis/{$id}.pdf", $pdf->body());
 
     return response()->json([
         'success' => true,
