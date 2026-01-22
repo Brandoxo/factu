@@ -4,8 +4,16 @@ namespace App\Services;
 
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Http\Request;
+use App\Models\Client;
+use App\Models\Invoice;
+use App\Models\InvoiceItem;
+use App\Models\InvoiceTax;
+use App\Models\FiscalEntity;
+use Illuminate\Http\JsonResponse;
 use Exception;
-
+use Illuminate\Support\Js;
+use Nette\Utils\Json;
 
 class FacturamaFilesService
 {
@@ -82,5 +90,68 @@ class FacturamaFilesService
             'pdf' => url("storage/cfdis/{$id}.pdf"),
         ]
     ]);
+    }
+
+    public function storeCfdiData($cfdiData, $cfdiResponse, $storageResponse)
+    {
+        $cfdiData = $cfdiData['cfdiData'] ?? $cfdiData;
+
+        $cfdiResponse = $cfdiResponse instanceof JsonResponse
+            ? $cfdiResponse->json()
+            : (is_array($cfdiResponse) ? $cfdiResponse : []);
+
+        $storageResponse = $storageResponse instanceof JsonResponse
+            ? $storageResponse->json()
+            : (is_array($storageResponse) ? $storageResponse : []);
+        
+        $receiverData = $cfdiData['Receiver'] ?? [];
+
+        $fullName = $receiverData['Name'] ?? 'Sin nombre';
+        $nameParts = explode(' ', trim($fullName));
+        $firstName = $nameParts[0] ?? '';
+        $lastName = $nameParts[2] ?? $nameParts[1] ?? '';
+        $simplifiedName = trim($firstName . ' ' . $lastName);
+
+        $client = Client::firstOrCreate(
+            [
+                'internal_name' => $simplifiedName,
+                'email' => $receiverData['Email'] ?? null,
+            ]
+        );
+        
+        $fiscalEntity = new FiscalEntity(
+            [   
+                'client_id'  => $client->id,
+                'legal_name' => $receiverData['Name'] ?? 'Sin nombre',
+                'rfc' => $receiverData['Rfc'] ?? 'XAXX010101000',
+                'tax_regime' => $receiverData['FiscalRegime'] ?? null,
+                'zip_code'   => $receiverData['TaxZipCode'] ?? null,
+            ]
+        );
+        $fiscalEntity->save();
+        
+                $invoice = new Invoice([
+                    'fiscal_entity_id' => $fiscalEntity->id,
+                    'reservation_id' => $cfdiData['ReservationID'] ?? '324234',
+                    'order_id' => $cfdiData['OrderID'] ?? 0,
+                    'subtotal' => $cfdiResponse['Subtotal'] ?? 0,
+                    'total' => $cfdiResponse['Total'] ?? 0,
+                    'pdf_path' => "cfdis/{$storageResponse['id']}.pdf",
+                    'xml_path' => "cfdis/{$storageResponse['id']}.xml",
+                    'facturama_id' => $cfdiResponse['Id'] ?? null,
+                    'cfdi_uuid' => $cfdiResponse['Complement']['TaxStamp']['Uuid'] ?? null,
+                    'status' => $cfdiResponse['Status'] ?? 'draft',
+                    'payment_form' => $cfdiResponse['PaymentTerms'] ?? null,
+                    'payment_method' => $cfdiResponse['PaymentMethod'] ?? null,
+                    'use_cfdi' => $receiverData['CfdiUse'] ?? null,
+                ]);
+        $invoice->save();
+        
+        return response()->json([
+            'success' => true,
+            'message' => 'CFDI guardado correctamente',
+            'invoice_id' => $invoice->id,
+            'fiscal_entity_id' => $fiscalEntity->id,
+        ]);
     }
 }
