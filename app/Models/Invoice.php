@@ -3,17 +3,25 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class Invoice extends Model
 {
    protected $table = 'invoices';
 
     protected $fillable = [
+        'fiscal_entity_id',
         'reservation_id',
         'order_id',
+        'facturama_id',
+        'cfdi_uuid',
         'status',
-        'cfdi_id',
+        'payment_form',
+        'payment_method',
+        'use_cfdi',
+        'subtotal',
+        'total',
+        'pdf_path',
+        'xml_path',
     ];
 
     public function items()
