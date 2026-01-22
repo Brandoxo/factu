@@ -14,11 +14,11 @@ return new class extends Migration
         if (!Schema::hasTable('fiscal_entities')) {
         Schema::create('fiscal_entities', function (Blueprint $table) {
             $table->id()->bigInteger();
-            $table->string('rfc')->unique();
+            $table->bigInteger('client_id')->constrained('clients');
             $table->string('legal_name');
+            $table->string('rfc');
             $table->string('tax_regime');
             $table->string('zip_code');
-            $table->string('email');
             $table->timestamps();
         });
         }

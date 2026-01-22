@@ -15,11 +15,11 @@ return new class extends Migration
         Schema::create('invoices', function (Blueprint $table) {
             $table->id()->bigInteger();
             $table->foreignId('fiscal_entity_id')->constrained('fiscal_entities');
-            $table->string('reservation_id')->unique();
-            $table->decimal('order_id', 15, 2)->unique();
-            $table->string('facturama_id')->unique();
+            $table->string('reservation_id');
+            $table->decimal('order_id', 15, 2);
+            $table->string('facturama_id');
             $table->string('cfdi_uuid')->unique();
-            $table->enum('status', ['draft', 'pending', 'stamped', 'cancelled']);
+            $table->enum('status', ['draft', 'pending', 'active', 'cancelled']);
             $table->string('payment_form');
             $table->string('payment_method');
             $table->string('use_cfdi');
