@@ -13,3 +13,5 @@ Route::post('/hotel/submit-form', [FrontController::class, 'submitHotelForm'])->
 Route::get('/billing/{reservationID}', [FrontController::class, 'showBillingForm'])->middleware('signed')->name('billing.form');
 
 Route::post('/billing/generate-invoice', [CfdisController::class, 'generateInvoice'])->name('billing.generate.invoice');
+
+Route::post('/billing/store-cfdi', [CfdisController::class, 'store'])->name('billing.store.cfdi');
