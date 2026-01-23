@@ -73,12 +73,15 @@ class CfdisController extends Controller
         $cfdiResponse_Array = $cfdiResponse->json();
         
         //usar ruta storeCfdiData para guardar en BD;
-        $this->store([
+        if ($storageData && ($storageData['success'] ?? false))
+            {
+      /* return */ $this->store([
             'cfdiData' => $cfdiData,
             'cfdiResponse' => $cfdiResponse_Array,
             'storageData' => $storageData,
             'optionsId' => $cfdiData['optionsId'] ?? null,
-        ]);
+            ]);
+            }
         
         $allResponse = [
             'cfdi' => $cfdiResponse->json(),
