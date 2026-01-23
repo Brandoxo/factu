@@ -13,7 +13,7 @@ return new class extends Migration
     {
         if (!Schema::hasTable('invoices')) {
         Schema::create('invoices', function (Blueprint $table) {
-            $table->id()->bigInteger();
+            $table->id();
             $table->foreignId('fiscal_entity_id')->constrained('fiscal_entities');
             $table->string('reservation_id');
             $table->decimal('order_id', 15, 2);

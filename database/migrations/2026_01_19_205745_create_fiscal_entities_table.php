@@ -13,8 +13,8 @@ return new class extends Migration
     {   
         if (!Schema::hasTable('fiscal_entities')) {
         Schema::create('fiscal_entities', function (Blueprint $table) {
-            $table->id()->bigInteger();
-            $table->bigInteger('client_id')->constrained('clients');
+            $table->id();
+            $table->foreignId('client_id')->constrained('clients');
             $table->string('legal_name');
             $table->string('rfc');
             $table->string('tax_regime');
