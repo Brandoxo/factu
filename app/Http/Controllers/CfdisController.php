@@ -17,12 +17,12 @@ class CfdisController extends Controller
         $this->facturamaFilesService = $facturamaFilesService;
     }
     
-    public function store($cfdiData, $cfdiResponse, $storageResponse)
+    public function store(array $data)
     {
-       
+
         try {
  
-            $storeResponse = $this->facturamaFilesService->storeCfdiData($cfdiData, $cfdiResponse, $storageResponse);
+            $storeResponse = $this->facturamaFilesService->storeCfdiData($data);
             return $storeResponse;
  
         } catch (\Exception $e) {
@@ -69,9 +69,16 @@ class CfdisController extends Controller
         $storageData = $storageResponse instanceof JsonResponse
             ? $storageResponse->getData(true)
             : $storageResponse->json();
+
+        $cfdiResponse_Array = $cfdiResponse->json();
         
         //usar ruta storeCfdiData para guardar en BD;
-        $this->store($cfdiData, $cfdiResponse, $storageData);
+        $this->store([
+            'cfdiData' => $cfdiData,
+            'cfdiResponse' => $cfdiResponse_Array,
+            'storageData' => $storageData,
+            'optionsId' => $cfdiData['optionsId'] ?? null,
+        ]);
         
         $allResponse = [
             'cfdi' => $cfdiResponse->json(),
