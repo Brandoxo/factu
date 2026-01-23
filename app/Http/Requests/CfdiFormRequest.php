@@ -23,6 +23,7 @@ class CfdiFormRequest extends FormRequest
     {
         return [
             'cfdiData' => 'required|array',
+            'optionsId' => 'nullable',
         ];
     }
 
