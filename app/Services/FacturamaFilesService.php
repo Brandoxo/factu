@@ -11,6 +11,7 @@ use App\Models\InvoiceItem;
 use App\Models\InvoiceTax;
 use App\Models\FiscalEntity;
 use Illuminate\Http\JsonResponse;
+use App\Models\TaxStamp;
 
 class FacturamaFilesService
 {
@@ -91,11 +92,11 @@ class FacturamaFilesService
 
     public function storeCfdiData(array $data)
     {
-        
         $cfdiData     = $data['cfdiData']['cfdiData'] ?? [];
         $cfdiResponse = $data['cfdiResponse'];
         $storageResponse  = $data['storageData'];
         $optionsId = $data['optionsId'] ?? null;
+        $taxStampData = $cfdiResponse['Complement']['TaxStamp'] ?? [];
 
         $cfdiResponse = $cfdiResponse instanceof JsonResponse
             ? $cfdiResponse->json()
@@ -104,7 +105,7 @@ class FacturamaFilesService
         $storageResponse = $storageResponse instanceof JsonResponse
             ? $storageResponse->json()
             : (is_array($storageResponse) ? $storageResponse : []);
-        
+
         $receiverData = $cfdiData['Receiver'] ?? [];
 
         $fullName = $receiverData['Name'] ?? 'Sin nombre';
@@ -133,20 +134,30 @@ class FacturamaFilesService
         
                 $invoice = new Invoice([
                     'fiscal_entity_id' => $fiscalEntity->id,
-                    'reservation_id' => $optionsId['reservationId'] ?? '324234',
+                    'reservation_id' => $optionsId['reservationId'] ?? '0',
                     'order_id' => $optionsId['orderId'] ?? 0,
                     'subtotal' => $cfdiResponse['Subtotal'] ?? 0,
                     'total' => $cfdiResponse['Total'] ?? 0,
                     'pdf_path' => "cfdis/{$storageResponse['id']}.pdf",
                     'xml_path' => "cfdis/{$storageResponse['id']}.xml",
                     'facturama_id' => $cfdiResponse['Id'] ?? null,
-                    'cfdi_uuid' => $cfdiResponse['Complement']['TaxStamp']['Uuid'] ?? null,
+                    'cfdi_uuid' => $taxStampData['Uuid'] ?? null,
                     'status' => $cfdiResponse['Status'] ?? 'draft',
                     'payment_form' => $cfdiResponse['PaymentTerms'] ?? null,
                     'payment_method' => $cfdiResponse['PaymentMethod'] ?? null,
                     'use_cfdi' => $receiverData['CfdiUse'] ?? null,
                 ]);
         $invoice->save();
+
+        $taxStamp = new TaxStamp([
+            'invoice_id' => $invoice->id,
+            'cfdi_sign' => $taxStampData['CfdiSign'] ?? null,
+            'rfc_prov_certif' => $taxStampData['RfcProvCertif'] ?? null,
+            'sat_cert_number' => $taxStampData['SatCertNumber'] ?? null,
+            'sat_sign' => $taxStampData['SatSign'] ?? null,
+            'date_time' => $taxStampData['Date'] ?? null,
+        ]);
+        $taxStamp->save();
         
         return response()->json([
             'success' => true,
@@ -157,5 +168,7 @@ class FacturamaFilesService
             'cfdiResponse' => $cfdiResponse,
             'storageResponse' => $storageResponse,
         ]);
+
+
     }
 }
