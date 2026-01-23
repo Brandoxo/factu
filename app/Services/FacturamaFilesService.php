@@ -11,9 +11,6 @@ use App\Models\InvoiceItem;
 use App\Models\InvoiceTax;
 use App\Models\FiscalEntity;
 use Illuminate\Http\JsonResponse;
-use Exception;
-use Illuminate\Support\Js;
-use Nette\Utils\Json;
 
 class FacturamaFilesService
 {
@@ -92,9 +89,13 @@ class FacturamaFilesService
     ]);
     }
 
-    public function storeCfdiData($cfdiData, $cfdiResponse, $storageResponse)
+    public function storeCfdiData(array $data)
     {
-        $cfdiData = $cfdiData['cfdiData'] ?? $cfdiData;
+        
+        $cfdiData     = $data['cfdiData']['cfdiData'] ?? [];
+        $cfdiResponse = $data['cfdiResponse'];
+        $storageResponse  = $data['storageData'];
+        $optionsId = $data['optionsId'] ?? null;
 
         $cfdiResponse = $cfdiResponse instanceof JsonResponse
             ? $cfdiResponse->json()
@@ -132,8 +133,8 @@ class FacturamaFilesService
         
                 $invoice = new Invoice([
                     'fiscal_entity_id' => $fiscalEntity->id,
-                    'reservation_id' => $cfdiData['ReservationID'] ?? '324234',
-                    'order_id' => $cfdiData['OrderID'] ?? 0,
+                    'reservation_id' => $optionsId['reservationId'] ?? '324234',
+                    'order_id' => $optionsId['orderId'] ?? 0,
                     'subtotal' => $cfdiResponse['Subtotal'] ?? 0,
                     'total' => $cfdiResponse['Total'] ?? 0,
                     'pdf_path' => "cfdis/{$storageResponse['id']}.pdf",
@@ -152,6 +153,9 @@ class FacturamaFilesService
             'message' => 'CFDI guardado correctamente',
             'invoice_id' => $invoice->id,
             'fiscal_entity_id' => $fiscalEntity->id,
+            'cfdiData' => $cfdiData,
+            'cfdiResponse' => $cfdiResponse,
+            'storageResponse' => $storageResponse,
         ]);
     }
 }
