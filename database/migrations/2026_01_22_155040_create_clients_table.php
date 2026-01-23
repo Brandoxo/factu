@@ -10,15 +10,16 @@ return new class extends Migration
      * Run the migrations.
      */
     public function up(): void
-    {
+    {   
+        if (!Schema::hasTable('clients')) {
         Schema::create('clients', function (Blueprint $table) {
             $table->id()->bigInteger();
             $table->string('internal_name');
             $table->string('email');
             $table->timestamps();
         });
+        }
     }
-
     /**
      * Reverse the migrations.
      */
