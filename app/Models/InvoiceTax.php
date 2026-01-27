@@ -9,9 +9,10 @@ class InvoiceTax extends Model
     protected $table = 'invoice_taxes';
 
     protected $fillable = [
-        'invoice_id',
+        'invoice_item_id',
         'tax_type',
         'rate',
         'amount',
+        'retention',
     ];
 }
