@@ -17,7 +17,7 @@ return new class extends Migration
             $table->enum('tax_type', ['IVA', 'ISH', 'ISR']);
             $table->decimal('rate', 5, 2);
             $table->decimal('amount', 15, 2);
-            $table->boolean('retention');
+            $table->boolean('retention')->default(false);
             $table->timestamps();
         });
        }

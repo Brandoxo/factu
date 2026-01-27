@@ -20,8 +20,7 @@ return new class extends Migration
             $table->string('description');
             $table->decimal('quantity', 15, 2);
             $table->decimal('unit_price', 15, 2);
-            $table->decimal('amount', 15, 2);
-            $table->string('cloudbeds_transaction_id');
+            $table->string('sub_reservation_id')->nullable();
             $table->timestamps();
         });
         }
