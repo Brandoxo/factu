@@ -180,7 +180,30 @@ class FacturamaFilesService
                 $invoiceItem->sub_reservation_id = $optionsId['reservationId'] . '-extras' ?? null;
             }
             $invoiceItem->save();
+            // Agregar impuestos al ítem
+            $invoiceTaxData = $cfdiResponse['Taxes'][0] ?? [];
+            $invoiceTaxIva = new InvoiceTax([
+                'invoice_item_id' => $invoiceItem->id,
+                'tax_type' => 'IVA',
+                'rate' => 0.16,
+                'amount' => $invoiceTaxData['Total'] ?? 0,
+                'retention' => false,
+            ]);
+            $invoiceTaxIsh = new InvoiceTax([
+                'invoice_item_id' => $invoiceItem->id,
+                'tax_type' => 'ISH',
+                'rate' => 0.05,
+                'amount' => $itemData['UnitValue'] * 0.04,
+                'retention' => false,
+            ]);
+            if($itemData['Description'] === 'CARGOS ADICIONALES / SERVICIOS EXTRAS'){
+               //dont save taxes for extras
+            continue;
+            }
+            $invoiceTaxIva->save();
+            $invoiceTaxIsh->save();
         }
+
         
         return response()->json([
             'success' => true,
