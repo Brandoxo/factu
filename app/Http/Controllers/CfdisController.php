@@ -75,11 +75,13 @@ class CfdisController extends Controller
         //usar ruta storeCfdiData para guardar en BD;
         if ($storageData && ($storageData['success'] ?? false))
             {
+
       /* return */ $this->store([
             'cfdiData' => $cfdiData,
             'cfdiResponse' => $cfdiResponse_Array,
             'storageData' => $storageData,
             'optionsId' => $cfdiData['optionsId'] ?? null,
+            'extrasId' => $cfdiData['extrasId'] ?? null,
             ]);
             }
         

@@ -153,8 +153,15 @@ const submitBillingForm = async () => {
         reservationId: props.reservation.reservationID ?? null,
         orderId: props.reservation.orderID ?? null,
       },
+      extrasId:{ subReservationIDs: props.reservation.assigned.map(
+        (room) => room.subReservationID,
+      ),
+        roomIDs: props.reservation.assigned.map(
+          (room) => room.roomID,
+        ),
+    }
     });
-
+    console.log('FIltered Rooms:', selectedItems.value);
     console.log("Respuesta Exitosa:", response.data);
     console.log("Factura creada con ID:", response.data.cfdi.Id);
     console.log("XML:", response.data.storage.files.xml);
