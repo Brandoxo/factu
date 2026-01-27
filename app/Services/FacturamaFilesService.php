@@ -97,6 +97,8 @@ class FacturamaFilesService
         $storageResponse  = $data['storageData'];
         $optionsId = $data['optionsId'] ?? null;
         $taxStampData = $cfdiResponse['Complement']['TaxStamp'] ?? [];
+        $subReservationIDs = $data['extrasId']['subReservationIDs'] ?? null;
+        $roomIDs = $data['extrasId']['roomIDs'] ?? null;
 
         $cfdiResponse = $cfdiResponse instanceof JsonResponse
             ? $cfdiResponse->json()
@@ -158,6 +160,27 @@ class FacturamaFilesService
             'date_time' => $taxStampData['Date'] ?? null,
         ]);
         $taxStamp->save();
+
+        $invoiceItemsData = $cfdiResponse['Items'] ?? [];
+
+        foreach ($invoiceItemsData as $index => $itemData) {
+            $subReservationIDsForItem = is_array($subReservationIDs) && isset($subReservationIDs[$index])
+                ? $subReservationIDs[$index]
+                : null;
+            $invoiceItem = new InvoiceItem([
+                'invoice_id' => $invoice->id,
+                'product_code_sat' => $itemData['ProductCode'] ?? '',
+                'unit_code_sat' => $itemData['UnitCode'] ?? '',
+                'description' => $itemData['Description'] ?? '',
+                'quantity' => $itemData['Quantity'] ?? 0,
+                'unit_price' => $itemData['UnitValue'] ?? 0,
+                'sub_reservation_id' => $subReservationIDsForItem ?? $optionsId['reservationId'] ?? null,
+            ]);
+            if($itemData['Description'] === 'CARGOS ADICIONALES / SERVICIOS EXTRAS'){
+                $invoiceItem->sub_reservation_id = $optionsId['reservationId'] . '-extras' ?? null;
+            }
+            $invoiceItem->save();
+        }
         
         return response()->json([
             'success' => true,
@@ -171,4 +194,4 @@ class FacturamaFilesService
 
 
     }
-}
+    }
