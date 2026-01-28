@@ -81,6 +81,33 @@ class CloudbedsService
         ];
     }
 
+    public function extractAllRooms($reservation)
+    {
+        $allRoomIds = [];
+        if ($reservation['balanceDetailed']['additionalItems'] > 0) {
+            $allRoomIds[] = $reservation['reservationID'] . '-extras';
+        }
+        if (isset($reservation['assigned']) && is_array($reservation['assigned'])) {
+            foreach ($reservation['assigned'] as $assignment) {
+                $roomId = $assignment['subReservationID'] ?? $assignment['subReservationID'] ?? null;
+                if ($roomId) {
+                    $allRoomIds[] = $roomId;
+                }
+            }
+        }
+        $invoicedSubReservationIds = InvoiceItem::whereIn('sub_reservation_id', $allRoomIds)
+            ->whereIn('invoice_id', function ($query) use ($reservation) {
+                $query->select('id')
+                      ->from('invoices')
+                      ->where('reservation_id', $reservation['reservationID'])
+                      ->where('status', 'active');
+            })
+            ->distinct()
+            ->pluck('sub_reservation_id')
+            ->toArray();
+        return array_diff($allRoomIds, $invoicedSubReservationIds);
+    }
+
     public function getReservationData($ticketFolio, $checkOut)
     {
         // Normalizar fecha de checkout proporcionada
@@ -119,7 +146,10 @@ class CloudbedsService
         }
 
         // Extraer TODOS los room_id de la respuesta de Cloudbeds
-        $allRoomIds = [$reservation['reservationID'] . '-extras'];
+        $allRoomIds = [];
+        if ($reservation['balanceDetailed' === 0] ?? false) {
+            $allRoomIds[] = $reservation['reservationID'] . '-extras';
+        }
         if (isset($reservation['assigned']) && is_array($reservation['assigned'])) {
             foreach ($reservation['assigned'] as $assignment) {
                 $roomId = $assignment['subReservationID'] ?? $assignment['subReservationID'] ?? null;

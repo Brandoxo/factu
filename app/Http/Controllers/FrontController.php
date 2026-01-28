@@ -70,9 +70,9 @@ class FrontController extends Controller
         if (!$validation['valid']) {
             return redirect()->route('home')->with('error', $validation['error']);
         }
-
         return Inertia::render('Billing/BillingForm', [
             'reservation' => $reservation,
+            'filteredRoomsAvailable' => array_values($this->cloudbedsService->extractAllRooms($reservation)),
         ]);
     }
 }
