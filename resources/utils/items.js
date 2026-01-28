@@ -33,13 +33,13 @@ export const items = (reservation) => {
       }
     
     return {
-      ProductCode: "10101504", //Código estándar para servicios de alojamiento
+      ProductCode: "90111500", //Código estándar para servicios de alojamiento
       IdentificationNumber: `${String(index + 1).padStart(3, "0")}-${
         room.roomName
       }`, //Número de identificación único para la habitación
       Description: `SERVICIO DE ALOJAMIENTO - HAB ${room.roomName} - ${room.roomTypeName}`, //Descripción del servicio con detalles de la habitación
       Unit: "NO APLICA", //Unidad de medida, "NO APLICA" para servicios
-      UnitCode: "E49", //Código de unidad de medida estándar para servicios
+      UnitCode: "E48", //Código de unidad de medida estándar para servicios
       UnitPrice: roomSubtotal, //Precio unitario del servicio
       Quantity: 1, //Cantidad de noches o servicios, generalmente 1 por Item
       Subtotal: roomSubtotal, //Subtotal antes de impuestos
