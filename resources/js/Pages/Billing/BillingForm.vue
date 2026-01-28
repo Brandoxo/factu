@@ -20,8 +20,26 @@ const props = defineProps({
     type: Object,
     required: true,
   },
+  filteredRoomsAvailable: {
+    type: Array,
+    required: true,
+  },
 });
 console.log("estos son los datos de la reserva", props.reservation);
+console.log(
+  "Estos son los rooms disponibles:",
+  props.filteredRoomsAvailable,
+);
+
+const filteredRoomsAvailableWithExtras = computed(() => {
+  return props.filteredRoomsAvailable.includes(
+    props.reservation.reservationID + "-extras",
+  );
+});
+console.log(
+  "Filtered Rooms Available with Extras:",
+  filteredRoomsAvailableWithExtras.value,
+);
 
 //Año para ISH
 const yearReservation = props.reservation.startDate.slice(0, 4);
@@ -48,11 +66,28 @@ const displayRoomTotal = (room) => {
   return Number((subtotal + iva + ish).toFixed(2));
 };
 
-// Estado reactivo para trackear qué habitaciones están incluidas
-const selectedRooms = ref(props.reservation.assigned.map(() => true));
+const filteredRoomsAvailable = computed(() => {
+  return props.reservation.assigned.filter((room) =>
+    props.filteredRoomsAvailable.includes(room.subReservationID)
+  );
+});
+console.log("Filtered Rooms Available:", filteredRoomsAvailable.value);
 
+// Estado reactivo para trackear qué habitaciones están incluidas (usando subReservationID como clave)
+const selectedRooms = ref(
+  filteredRoomsAvailable.value.reduce((acc, room) => {
+    acc[room.subReservationID] = true;
+    return acc;
+  }, {})
+);
 // Estado reactivo para trackear si los items adicionales están incluidos
 const includeAdditionalItems = ref(true);
+
+if (filteredRoomsAvailableWithExtras.value) {
+   includeAdditionalItems.value = true;
+} else {
+   includeAdditionalItems.value = false;
+}
 
 const filteredRegimes = computed(() => {
   const rfcLength = form.rfc.length;
@@ -77,8 +112,8 @@ const totalToInvoice = computed(() => {
   let total = 0;
 
   // Sumar habitaciones seleccionadas
-  props.reservation.assigned.forEach((room, index) => {
-    if (selectedRooms.value[index]) {
+  filteredRoomsAvailable.value.forEach((room) => {
+    if (selectedRooms.value[room.subReservationID]) {
       let roomSubtotal = getTotalRate(room.dailyRates);
 
       if (!isTaxable) {
@@ -93,13 +128,14 @@ const totalToInvoice = computed(() => {
     }
   });
 
-  // Agregar complementos si están seleccionados y hay habitaciones seleccionadas
+  // Agregar complementos si están seleccionados
   if (
     includeAdditionalItems.value &&
-    selectedRooms.value.some((selected) => selected) &&
     props.reservation.balanceDetailed.additionalItems > 0
   ) {
-    total += Number(props.reservation.balanceDetailed.additionalItems);
+    const additionalAmount =
+      Number(props.reservation.balanceDetailed.additionalItems) || 0;
+    total += additionalAmount;
   }
 
   return Number(total.toFixed(2));
@@ -108,19 +144,16 @@ const totalToInvoice = computed(() => {
 // Computed para obtener los items filtrados
 const selectedItems = computed(() => {
   const allItems = items(props.reservation);
-  const roomCount = props.reservation.assigned.length;
-
-  // Filtrar items de habitaciones según selección
-  const filteredRoomItems = allItems
-    .slice(0, roomCount)
-    .filter((_, index) => selectedRooms.value[index]);
-
-  // Si hay items adicionales y están seleccionados
-  if (allItems.length > roomCount && includeAdditionalItems.value) {
-    return [...filteredRoomItems, ...allItems.slice(roomCount)];
-  }
-
-  return filteredRoomItems;
+  
+  // Filtrar items usando sub_reservation_id
+  return allItems.filter((item) => {
+    // Si el item tiene sub_reservation_id, verificar si está seleccionado
+    if (item.sub_reservation_id) {
+      return selectedRooms.value[item.sub_reservation_id];
+    }
+    // Si no tiene sub_reservation_id (items adicionales), verificar el checkbox de complementos
+    return includeAdditionalItems.value;
+  });
 });
 
 const form = useForm({
@@ -167,6 +200,8 @@ const submitBillingForm = async () => {
     console.log("XML:", response.data.storage.files.xml);
     console.log("PDF:", response.data.storage.files.pdf);
     Swal.fire("¡Éxito!", "Factura creada: " + response.data.cfdi.Id, "success");
+    // Redirigir a la pagina principal
+    router.visit("/");
   } catch (error) {
     console.error("Error en la petición:", error.response.data);
 
@@ -194,13 +229,13 @@ const submitBillingForm = async () => {
       </div>
 
       <div
-        v-for="room in reservation.assigned"
+        v-for="room in filteredRoomsAvailable"
         class="bg-white/10 backdrop-blur-sm rounded-lg p-6 mb-6"
       >
         <div>
           <h2 class="text-xl font-semibold text-white mb-4">
             Información de la Reserva
-            {{ 1 + reservation.assigned.indexOf(room) }}
+            {{ 1 + filteredRoomsAvailable.indexOf(room) }}
           </h2>
           <div class="grid grid-cols-2 lg:grid-cols-5 gap-4 text-white">
             <div>
@@ -270,12 +305,12 @@ const submitBillingForm = async () => {
         <div class="mt-4 text-center">
           <input
             type="checkbox"
-            :id="'includeRoom' + reservation.assigned.indexOf(room)"
-            v-model="selectedRooms[reservation.assigned.indexOf(room)]"
+            :id="'includeRoom' + room.subReservationID"
+            v-model="selectedRooms[room.subReservationID]"
             class="mt-4 w-4 h-4 cursor-pointer"
           />
           <label
-            :for="'includeRoom' + reservation.assigned.indexOf(room)"
+            :for="'includeRoom' + room.subReservationID"
             class="text-white ml-2 cursor-pointer"
           >
             Incluir esta habitación en la factura
@@ -284,7 +319,7 @@ const submitBillingForm = async () => {
       </div>
 
       <div
-        v-if="reservation.balanceDetailed.additionalItems > 0"
+        v-if="reservation.balanceDetailed.additionalItems > 0 && filteredRoomsAvailableWithExtras"
         class="bg-white/10 backdrop-blur-sm rounded-lg p-4 mt-0 text-white"
       >
         <div class="flex w-fit mx-auto gap-2 mb-3">
@@ -350,7 +385,7 @@ const submitBillingForm = async () => {
           >
         </h2>
         <p
-          v-if="!selectedRooms.some((selected) => selected)"
+          v-if="!Object.values(selectedRooms).some((selected) => selected)"
           class="text-red-300 text-sm mt-2"
         >
           ⚠️ Debes seleccionar al menos una habitación para facturar
@@ -520,7 +555,7 @@ const submitBillingForm = async () => {
             <button
               type="submit"
               :disabled="
-                form.processing || !selectedRooms.some((selected) => selected)
+                form.processing || !Object.values(selectedRooms).some((selected) => selected)
               "
               class="flex-1 px-6 py-3 bg-blue-600 text-white rounded-full hover:bg-blue-700 disabled:opacity-50 transition-all cursor-pointer"
             >
