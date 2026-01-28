@@ -193,8 +193,10 @@ class FacturamaFilesService
                 'retention' => false,
             ]);
             if($itemData['Description'] === 'CARGOS ADICIONALES / SERVICIOS EXTRAS'){
-            // No agregar impuestos a los extras
-            continue;
+                // Solo guardar IVA para extras
+                $invoiceTaxIva->save();
+                // No agregar impuestos a los extras
+                continue;
             }
             $invoiceTaxIva->save();
             $invoiceTaxIsh->save();
