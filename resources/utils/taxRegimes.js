@@ -80,16 +80,6 @@ const taxRegimes = [
       "aplica_para": ["Persona Física"]
     },
     {
-      "clave": "618",
-      "nombre": "Régimen Simplificado de Confianza (RESICO) Personas Físicas",
-      "aplica_para": ["Persona Física"]
-    },
-    {
-      "clave": "619",
-      "nombre": "Ingresos por la obtención de préstamos",
-      "aplica_para": ["Persona Física"]
-    },
-    {
       "clave": "620",
       "nombre": "Sociedades Cooperativas de Producción que optan por diferir sus ingresos",
       "aplica_para": ["Persona Moral"]
@@ -121,7 +111,7 @@ const taxRegimes = [
     },
     {
       "clave": "626",
-      "nombre": "Régimen Simplificado de Confianza (RESICO) Personas Físicas (Continuación/Clave alterna)",
+      "nombre": "Régimen Simplificado de Confianza (RESICO) Personas Físicas",
       "aplica_para": ["Persona Física"]
     }
   ];
