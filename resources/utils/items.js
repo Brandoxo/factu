@@ -45,6 +45,7 @@ export const items = (reservation) => {
       Subtotal: roomSubtotal, //Subtotal antes de impuestos
       Discount: 0.0, //Descuento aplicado, si es que hay alguno
       TaxObject: "02", //Objeto del impuesto, "02" para servicios gravados
+      sub_reservation_id: room.subReservationID ?? null, // ID de la sub-reservación para vincular con la factura
 
       // Impuestos aplicables: solo incluir cuando el Objeto de Impuesto sea "02"
         Taxes: [
