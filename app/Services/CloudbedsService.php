@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Invoice;
+use App\Models\InvoiceItem;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\URL;
@@ -82,13 +83,6 @@ class CloudbedsService
 
     public function getReservationData($ticketFolio, $checkOut)
     {
-        $existingInvoice = Invoice::where('reservation_id', $ticketFolio)
-                                    ->where('status', 'stamped')
-                                    ->first();
-        if ($existingInvoice) {
-            throw new Exception('Esta reserva ya tiene una factura emitida.');
-        }
-
         // Normalizar fecha de checkout proporcionada
         $providedCheckOut = null;
         try {
@@ -124,12 +118,52 @@ class CloudbedsService
             ], 422);
         }
 
-        // Generar URL firmada para la página de facturación (10 minutos)
+        // Extraer TODOS los room_id de la respuesta de Cloudbeds
+        $allRoomIds = [$reservation['reservationID'] . '-extras'];
+        if (isset($reservation['assigned']) && is_array($reservation['assigned'])) {
+            foreach ($reservation['assigned'] as $assignment) {
+                $roomId = $assignment['subReservationID'] ?? $assignment['subReservationID'] ?? null;
+                if ($roomId) {
+                    $allRoomIds[] = $roomId;
+                }
+            }
+        }
+
+        if (empty($allRoomIds)) {
+            return response()->json([
+                'message' => 'No se pudo obtener ningún ID de habitación de la reservación',
+                'data'    => $reservation,
+            ], 422);
+        }
+
+        // Obtener habitaciones que YA TIENEN factura activa
+        // Buscar invoices activas de esta reservación que tengan items con sub_reservation_id en $allRoomIds
+        $invoicedRoomIds = Invoice::where('reservation_id', $ticketFolio)
+                                   ->where('status', 'active');
+        $invoicedRoomIds = InvoiceItem::whereIn('sub_reservation_id', $allRoomIds)
+                                   ->whereIn('invoice_id', $invoicedRoomIds->pluck('id'))
+                                   ->distinct()
+                                   ->pluck('sub_reservation_id')
+                                   ->toArray();
+
+        // Identificar habitaciones SIN factura
+        $availableRoomIds = array_diff($allRoomIds, $invoicedRoomIds);
+
+        // Si NO hay habitaciones disponibles para facturar, bloquear
+        if (empty($availableRoomIds)) {
+            return response()->json([
+                'message' => 'Todas las habitaciones de esta reservación ya tienen facturas emitidas',
+                'invoiced_rooms' => $invoicedRoomIds,
+            ], 422);
+        }
+
+        // Generar URL firmada para la página de facturación
         $billingUrl = URL::temporarySignedRoute(
             'billing.form',
             now()->addMinutes(10),
             [
                 'reservationID' => $ticketFolio,
+                'availableRoomIds' => $availableRoomIds,
                 'checkOut'      => $providedCheckOut,
             ]
         );
@@ -137,6 +171,9 @@ class CloudbedsService
         return response()->json([
             'message'     => 'Enviado y recibido correctamente',
             'data'        => $reservation,
+            'all_rooms'   => $allRoomIds,
+            'invoiced_rooms' => $invoicedRoomIds,
+            'available_rooms' => $availableRoomIds,
             'billing_url' => $billingUrl,
         ]);
     }
