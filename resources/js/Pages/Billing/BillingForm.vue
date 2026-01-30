@@ -166,6 +166,34 @@ const form = useForm({
   paymentMethod: "",
 });
 
+const extrasId = computed(() => {
+  if (props.reservation.balanceDetailed.additionalItems > 0)
+    return {
+      subReservationIDs: [
+        ...props.reservation.assigned.map(
+          (room) => room.subReservationID,
+        ),
+        props.reservation.reservationID + "-extras",
+      ],
+      roomIDs: props.reservation.assigned.map(
+          (room) => room.roomID,
+        ),
+    };
+    else {
+      return {
+        subReservationIDs: [
+          ...props.reservation.assigned.map(
+            (room) => room.subReservationID,
+          ),
+        ],
+       roomIDs: props.reservation.assigned.map(
+          (room) => room.roomID,
+        ),
+      };
+    }
+});
+console.log("Extras ID:", extrasId.value);
+
 const submitBillingForm = async () => {
   Swal.fire({
     title: "Generando factura...",
@@ -186,26 +214,22 @@ const submitBillingForm = async () => {
         reservationId: props.reservation.reservationID ?? null,
         orderId: props.reservation.orderID ?? null,
       },
-      extrasId:{ subReservationIDs: props.reservation.assigned.map(
-        (room) => room.subReservationID,
-      ),
-        roomIDs: props.reservation.assigned.map(
-          (room) => room.roomID,
-        ),
-    }
+      extrasId: extrasId.value,
+      filteredRoomsAvailable: props.filteredRoomsAvailable,
     });
     console.log('FIltered Rooms:', selectedItems.value);
     console.log("Respuesta Exitosa:", response.data);
-    console.log("Factura creada con ID:", response.data.cfdi.Id);
-    console.log("XML:", response.data.storage.files.xml);
-    console.log("PDF:", response.data.storage.files.pdf);
-    Swal.fire("¡Éxito!", "Factura creada: " + response.data.cfdi.Id, "success");
+    console.log("Factura creada con ID:", response.data.cfdiResponse.Id);
+    console.log("XML:", response.data.storageResponse.files.xml);
+    console.log("PDF:", response.data.storageResponse.files.pdf);
+    Swal.fire("¡Éxito!", "Factura creada: " + response.data.cfdiResponse.Id, "success");
     // Redirigir a la pagina principal
     router.visit("/");
   } catch (error) {
-    console.error("Error en la petición:", error.response.data);
+    console.error("Error en la petición:", error.response?.data || error.message || error);
 
-    Swal.fire("Error", "No se pudo crear la factura.", "error");
+    const errorMessage = error.response?.data?.message || error.message || "No se pudo crear la factura.";
+    Swal.fire("Error", errorMessage, "error");
   }
 };
 </script>
