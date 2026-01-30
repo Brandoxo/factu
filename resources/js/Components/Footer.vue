@@ -18,23 +18,11 @@
 
     </div>
 
-    <div class="bg-dark-soft p-2 ">
-
-        <ul class="text-white font-bold flex flex-wrap gap-4 justify-center 2xl:gap-20 text-md">
-            <li class="hover:text-black"><a href="#">Inicio</a></li>
-            <li class="hover:text-black"><a href="/desing-and-art">Habitaciones</a></li>
-            <li class="hover:text-black"><a href="/restaurant-ananas">Instalaciones</a></li>
-            <li class="hover:text-black"><a href="/contact">Contacto</a></li>
-            <li class="hover:text-black"><a href="#">Servicios</a></li>
-        </ul>
-
-    </div>
-
     <div class="bg-dark-soft p-1 text-center">
         <p class="text-white/75 text-sm">
             &copy; 
-2025
-            Hotel FCH Expo. Todos los derechos reservados.
+2026
+            Hotel Ronda Minerva. Todos los derechos reservados.
             Powered by <a href="https://pcbtroniks.com" target="_blank" class="font-bold">Pcbtroniks</a>.
         </p>
     </div>
