@@ -37,9 +37,11 @@ class CfdisController extends Controller
    public function generateInvoice(CfdiFormRequest $request)
 {
     $cfdiData = $request->validated();
+    $filteredRoomsAvailable = $cfdiData['filteredRoomsAvailable'] ?? [];
+    $optionsId = $cfdiData['optionsId'] ?? null;
     try {
         // Obtener CFDI desde Facturama API
-        $cfdiResponse = $this->facturamaFilesService->fetchCfdiFromApi($cfdiData, $request);
+        $cfdiResponse = $this->facturamaFilesService->fetchCfdiFromApi($cfdiData, $filteredRoomsAvailable, $optionsId, $request);
         
         // Verificar si la respuesta es un error de JsonResponse
         if ($cfdiResponse instanceof JsonResponse) {
@@ -76,19 +78,36 @@ class CfdisController extends Controller
         if ($storageData && ($storageData['success'] ?? false))
             {
 
-      /* return */ $this->store([
-            'cfdiData' => $cfdiData,
+            $storeResponse = $this->store([
+                'cfdiData' => $cfdiData,
+                'cfdiResponse' => $cfdiResponse_Array,
+                'storageData' => $storageData,
+                'optionsId' => $cfdiData['optionsId'] ?? null,
+                'extrasId' => $cfdiData['extrasId'] ?? null,
+            ]);
+            
+            // Verificar si store() retornó un error (JsonResponse)
+            if ($storeResponse instanceof JsonResponse) {
+                return $storeResponse;
+            }
+        } else {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error en los datos de almacenamiento',
+            ], 500);
+        }
+        
+        $responseByEmail = $this->facturamaFilesService->sendFilesByEmail(
+            $storeResponse['invoice_id'],
+            $storeResponse['fiscal_entity_id'],
+            $storeResponse['client_id'],
+        );
+
+        $allResponse = [
             'cfdiResponse' => $cfdiResponse_Array,
             'storageData' => $storageData,
-            'optionsId' => $cfdiData['optionsId'] ?? null,
-            'extrasId' => $cfdiData['extrasId'] ?? null,
-            ]);
-            }
-        
-        $allResponse = [
-            'cfdi' => $cfdiResponse->json(),
-            'storage' => $storageData
-            ];
+            'emailSent' => $responseByEmail,
+        ];
             
         return $allResponse;
 
