@@ -12,6 +12,7 @@ use App\Models\InvoiceTax;
 use App\Models\FiscalEntity;
 use Illuminate\Http\JsonResponse;
 use App\Models\TaxStamp;
+use Illuminate\Support\Facades\Log;
 
 class FacturamaFilesService
 {
@@ -23,12 +24,40 @@ class FacturamaFilesService
         $this->password = env('FACTURAMA_PASSWORD');
     }
     
-    public function fetchCfdiFromApi($datosCfdi, $request)
+    public function fetchCfdiFromApi($datosCfdi, $filteredRoomsAvailable, $optionsId, $request)
     {
     $username = $this->username;
     $password = $this->password;
 
     $datosCfdi = $request->cfdiData;
+
+    $currentReservationsId = [];
+    foreach ($datosCfdi['Items'] as $index) {
+        // Omitir items de cargos adicionales / servicios extras
+        if ($index['Description'] === 'CARGOS ADICIONALES / SERVICIOS EXTRAS') {
+            $currentReservationsId[] = $optionsId['reservationId'] .'-extras' ?? null;
+            continue;
+        }
+        $currentReservationsId[] = $index['sub_reservation_id'];
+    }
+    $subReservationIDs = $filteredRoomsAvailable ?? null;
+
+    $invoicedSubReservationIds = InvoiceItem::whereIn('sub_reservation_id', $subReservationIDs)
+            ->distinct()
+            ->pluck('sub_reservation_id')
+            ->toArray();
+
+    // Verificar si hay IDs duplicados facturados
+    $duplicatedIds = array_intersect($currentReservationsId, $invoicedSubReservationIds);
+    if (!empty($duplicatedIds)) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Algunos IDs de sub-reservación ya han sido facturados.',
+            'duplicated_ids' => $duplicatedIds,
+            'invoiced_ids' => $invoicedSubReservationIds,
+            'requested_ids' => $currentReservationsId,
+        ], 400);
+    }
 
     $cfdiResponse = Http::withBasicAuth($username, $password)
         ->withoutVerifying()
@@ -40,9 +69,9 @@ class FacturamaFilesService
             'message' => 'Error al timbrar CFDI',
             'facturama' => $cfdiResponse->json()
         ], 500);
-        }
+    }
 
-        return $cfdiResponse;
+    return $cfdiResponse;
     }
 
     public function storeCfdiFiles($cfdiResponse)
@@ -215,4 +244,28 @@ class FacturamaFilesService
 
 
     }
+
+    public function sendFilesByEmail($invoiceId, $fiscalEntityId, $clientId)
+    {
+        $invoice = Invoice::find($invoiceId);
+        $fiscalEntity = FiscalEntity::find($fiscalEntityId);
+        $client = Client::find($clientId);
+        if (!$invoice || !$fiscalEntity || !$client) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Datos inválidos para enviar correo',
+            ], 500);
+        }
+
+        Mail::to($client->email)->send(new \App\Mail\GenerateInvoice([
+            'invoice' => $invoice,
+            'fiscalEntity' => $fiscalEntity,
+            'client' => $client,
+        ]));
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Correo enviado correctamente',
+        ]);
     }
+}
