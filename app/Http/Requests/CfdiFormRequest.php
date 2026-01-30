@@ -25,6 +25,7 @@ class CfdiFormRequest extends FormRequest
             'cfdiData' => 'required|array',
             'optionsId' => 'nullable',
             'extrasId' => 'nullable|array',
+            'filteredRoomsAvailable' => 'nullable|array',
         ];
     }
 
