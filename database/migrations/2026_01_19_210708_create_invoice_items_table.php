@@ -20,7 +20,7 @@ return new class extends Migration
             $table->string('description');
             $table->decimal('quantity', 15, 2);
             $table->decimal('unit_price', 15, 2);
-            $table->string('sub_reservation_id')->nullable();
+            $table->string('sub_reservation_id')->nullable()->unique();
             $table->timestamps();
         });
         }
