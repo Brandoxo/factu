@@ -259,7 +259,6 @@ const submitBillingForm = async () => {
         <div>
           <h2 class="text-xl font-semibold text-white mb-4">
             Información de la Reserva
-            {{ 1 + filteredRoomsAvailable.indexOf(room) }}
           </h2>
           <div class="grid grid-cols-2 lg:grid-cols-5 gap-4 text-white">
             <div>
@@ -313,7 +312,7 @@ const submitBillingForm = async () => {
               </p>
             </div>
             <div>
-              <p class="text-sm opacity-75">Total + IVA</p>
+              <p class="text-sm opacity-75">SubTotal + IVA</p>
               <p class="font-semibold">
                 ${{
                   isTaxable
@@ -325,7 +324,15 @@ const submitBillingForm = async () => {
             </div>
           </div>
         </div>
-
+        <div class="text-center">
+          <h3 class="text-lg font-semibold text-white mt-4 mb-2">
+            Total de la habitación:
+          </h3>
+          <p class="text-white text-2xl font-bold">
+            ${{ displayRoomTotal(room) }} MXN
+          </p>
+        </div>
+        
         <div class="mt-4 text-center">
           <input
             type="checkbox"
@@ -402,9 +409,9 @@ const submitBillingForm = async () => {
       <div
         class="bg-white/10 backdrop-blur-sm rounded-b-lg p-6 mb-6 text-white text-center"
       >
-        <h2 class="">
+        <h2 class="text-2xl font-semibold">
           Total a facturar:
-          <span class="text-lg font-semibold underline"
+          <span class="text-2xl font-semibold underline"
             >${{ totalToInvoice }} MXN</span
           >
         </h2>
