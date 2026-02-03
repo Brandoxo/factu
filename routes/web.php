@@ -4,7 +4,9 @@ use App\Http\Controllers\CfdisController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\FrontController;
 
-Route::get('/', [FrontController::class, 'index'])->name('home');
+Route::redirect('/', '/services');
+
+Route::get('/services', [FrontController::class, 'index'])->name('home');
 
 Route::post('/restaurant/submit-form', [FrontController::class, 'submitRestaurantForm'])->name('restaurant.submit.form');
 
@@ -15,3 +17,5 @@ Route::get('/billing/{reservationID}', [FrontController::class, 'showBillingForm
 Route::post('/billing/generate-invoice', [CfdisController::class, 'generateInvoice'])->name('billing.generate.invoice');
 
 Route::post('/billing/store-cfdi', [CfdisController::class, 'store'])->name('billing.store.cfdi');
+
+Route::get('/invoice-success', [FrontController::class, 'billingSuccess'])->middleware('signed')->name('billing.success');
