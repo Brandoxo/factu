@@ -1,8 +1,19 @@
+<script setup>
+  import { onMounted } from 'vue';
+  onMounted(() => {
+    const btnBackToTop = document.getElementById('btn-back-to-top');
+
+    btnBackToTop.addEventListener('click', () => {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+  });
+</script>
+
 <template>
       <!-- Botón para subir al inicio de la página  -->
   <button
   type="button"
-  class="!opacity-100 !fixed bottom-5 end-5 rounded-full bg-aqua p-4 sm:p-6 text-3xl font-bold uppercase leading-tight text-white shadow-md transition duration-150 ease-in-out hover:bg-gray-700 hover:shadow-lg focus:bg-gray-700 focus:shadow-lg focus:outline-none focus:ring-0 active:bg-gray-800 active:shadow-lg z-40"
+  class="!opacity-100 !fixed bottom-5 end-5 rounded-full bg-aqua p-4 sm:p-6 text-3xl font-bold uppercase leading-tight text-white shadow-md transition duration-150 ease-in-out hover:bg-gray-700 hover:shadow-lg focus:bg-gray-700 focus:shadow-lg focus:outline-none focus:ring-0 active:bg-gray-800 active:shadow-lg z-40 cursor-pointer"
   id="btn-back-to-top"
   data-aos="fade-up"
   data-aos-duration="1000"
