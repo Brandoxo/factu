@@ -75,4 +75,13 @@ class FrontController extends Controller
             'filteredRoomsAvailable' => array_values($this->cloudbedsService->extractAllRooms($reservation)),
         ]);
     }
+
+    public function billingSuccess()
+    {
+        $billingData = session('billing_success_data');
+
+        return Inertia::render('Billing/BillingSuccess', [
+            'billingData' => $billingData,
+        ]);
+    }
 }
