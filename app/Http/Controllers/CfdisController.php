@@ -6,6 +6,8 @@ use Illuminate\Http\Request;
 use App\Services\FacturamaFilesService;
 use App\Http\Requests\CfdiFormRequest;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\URL;
 use Laravel\Pail\File;
 
 class CfdisController extends Controller
@@ -97,19 +99,26 @@ class CfdisController extends Controller
             ], 500);
         }
         
-        $responseByEmail = $this->facturamaFilesService->sendFilesByEmail(
-            $storeResponse['invoice_id'],
-            $storeResponse['fiscal_entity_id'],
-            $storeResponse['client_id'],
-        );
 
-        $allResponse = [
+        $responseByEmail = $this->facturamaFilesService->sendFilesByEmail(
+            $storeResponse, $storeResponse['cfdiData']['Receiver']['Email'] ?? null
+        );
+        Log::info('Correo Response: ' . json_encode($responseByEmail));
+
+        session()->flash('billing_success_data', [
             'cfdiResponse' => $cfdiResponse_Array,
-            'storageData' => $storageData,
+            'storageResponse' => $storageData,
             'emailSent' => $responseByEmail,
-        ];
-            
-        return $allResponse;
+        ]);
+
+        // Generar URL firmada para la página de éxito
+        $successUrl = URL::temporarySignedRoute('billing.success', now()->addMinutes(10));
+
+        return response()->json([
+            'success' => true,
+            'message' => 'CFDI generado correctamente',
+            'successUrl' => $successUrl,
+        ]);
 
     } catch (\Exception $e) {
         return response()->json([

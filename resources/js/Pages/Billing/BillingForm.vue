@@ -219,12 +219,11 @@ const submitBillingForm = async () => {
     });
     console.log('FIltered Rooms:', selectedItems.value);
     console.log("Respuesta Exitosa:", response.data);
-    console.log("Factura creada con ID:", response.data.cfdiResponse.Id);
-    console.log("XML:", response.data.storageResponse.files.xml);
-    console.log("PDF:", response.data.storageResponse.files.pdf);
-    Swal.fire("¡Éxito!", "Factura creada: " + response.data.cfdiResponse.Id, "success");
-    // Redirigir a la pagina principal
-    router.visit("/");
+    Swal.fire({"title": "¡Éxito!", "text": "Factura creada correctamente", "icon": "success"});
+    // Redirigir a la página de éxito con URL firmada
+    setTimeout(() => {
+      window.location.href = response.data.successUrl;
+    }, 2000);
   } catch (error) {
     console.error("Error en la petición:", error.response?.data || error.message || error);
 
@@ -578,8 +577,8 @@ const submitBillingForm = async () => {
           <div class="mt-6 flex gap-4">
             <button
               type="button"
-              @click="history.back()"
-              class="px-6 py-3 bg-gray-500 text-white rounded-full hover:bg-gray-600 transition-all"
+              @click="router.visit('/services')"
+              class="px-6 py-3 bg-gray-500 text-white rounded-full hover:bg-gray-600 transition-all cursor-pointer"
             >
               Cancelar
             </button>
