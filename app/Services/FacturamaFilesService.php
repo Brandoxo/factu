@@ -4,6 +4,7 @@ namespace App\Services;
 
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Http\Request;
 use App\Models\Client;
 use App\Models\Invoice;
@@ -232,7 +233,7 @@ class FacturamaFilesService
         }
 
         
-        return response()->json([
+        return [
             'success' => true,
             'message' => 'CFDI guardado correctamente',
             'invoice_id' => $invoice->id,
@@ -240,28 +241,21 @@ class FacturamaFilesService
             'cfdiData' => $cfdiData,
             'cfdiResponse' => $cfdiResponse,
             'storageResponse' => $storageResponse,
-        ]);
+            'client_id' => $cfdiData['client_id'] ?? null,
+        ];
 
 
     }
 
-    public function sendFilesByEmail($invoiceId, $fiscalEntityId, $clientId)
+    public function sendFilesByEmail(array $data, $client_email)
     {
-        $invoice = Invoice::find($invoiceId);
-        $fiscalEntity = FiscalEntity::find($fiscalEntityId);
-        $client = Client::find($clientId);
-        if (!$invoice || !$fiscalEntity || !$client) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Datos inválidos para enviar correo',
-            ], 500);
-        }
+        // storeResponse desglosado
+        Log::info('storeResponse: ' . json_encode($data));
 
-        Mail::to($client->email)->send(new \App\Mail\GenerateInvoice([
-            'invoice' => $invoice,
-            'fiscalEntity' => $fiscalEntity,
-            'client' => $client,
-        ]));
+        Log::info("Enviando correo a: " . $data['cfdiData']['Receiver']['Email'] ?? 'No email provided');
+        Mail::to($data['cfdiData']['Receiver']['Email'])->send(new \App\Mail\GenerateInvoice(
+            $data
+        ));
 
         return response()->json([
             'success' => true,
