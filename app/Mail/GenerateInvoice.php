@@ -16,7 +16,7 @@ class GenerateInvoice extends Mailable
     /**
      * Create a new message instance.
      */
-    public function __construct(public $invoiceData)
+    public function __construct(public array $data)
     {
         
     }
@@ -37,7 +37,10 @@ class GenerateInvoice extends Mailable
     public function content(): Content
     {
         return new Content(
-            view: 'emails.generate.invoice',
+            view: 'emails.generate-invoice',
+            with: [
+                'data' => $this->data,
+            ]
         );
     }
 
