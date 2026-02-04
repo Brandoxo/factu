@@ -1,15 +1,13 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { 
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
             line-height: 1.6; 
             color: #333; 
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             padding: 20px;
         }
         .container { 
@@ -22,7 +20,7 @@
             box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
         }
         .header { 
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #87ea66 0%, #4ba255 100%);
             color: #ffffff; 
             padding: 40px 30px; 
             text-align: center; 
@@ -87,12 +85,12 @@
             font-size: 15px;
         }
         .total-section {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #F89E37 0%, #f99017 100%);
             border-radius: 12px;
             padding: 20px 25px;
             margin: 25px 0;
             text-align: center;
-            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3);
+            box-shadow: 0 8px 20px rgba(248, 158, 55, 0.3);
         }
         .total-label {
             color: rgba(255, 255, 255, 0.9);
@@ -156,12 +154,12 @@
             border-top: 1px solid #e0e0e0;
         }
         .footer strong {
-            color: #667eea;
+            color: #F89E37;
             font-size: 15px;
         }
         .divider {
             height: 2px;
-            background: linear-gradient(to right, transparent, rgba(102, 126, 234, 0.5), transparent);
+            background: linear-gradient(to right, transparent, rgba(248, 158, 55, 0.5), transparent);
             margin: 20px 0;
         }
         @media only screen and (max-width: 600px) {
@@ -181,10 +179,10 @@
             <h1>✓ Factura Generada Exitosamente</h1>
             <p>Comprobante Fiscal Digital por Internet</p>
         </div>
-
+        
         <!-- Información del Emisor -->
-        <div style="text-align: center; padding: 25px 30px; background: #f9f9f9; border-bottom: 2px dashed #e0e0e0;">
-            <h2 style="font-size: 20px; font-weight: 700; color: #333; margin: 0 0 8px 0; text-transform: uppercase; letter-spacing: 0.5px;">
+        <div style="text-align: center; padding: 25px 30px; border-bottom: 2px dashed #e0e0e0;">
+            <h2 style="font-size: 20px; font-weight: 700; color: #F89E37; margin: 0 0 8px 0; text-transform: uppercase; letter-spacing: 0.5px;">
                 {{ $data['cfdiResponse']['Issuer']['TaxName'] }}
             </h2>
             <p style="font-size: 13px; color: #666; margin: 3px 0;">{{ $data['cfdiResponse']['Issuer']['TaxAddress']['Street'] }}</p>
@@ -210,7 +208,7 @@
                     <span class="value">{{ $data['cfdiResponse']['Id'] }}</span>
                 </div>
                 <div class="detail-row">
-                    <span class="label">Fecha: </span>
+                    <span class="label">Fecha y hora: </span>
                     <span class="value">{{ $data['cfdiResponse']['Date'] }}</span>
                 </div>
                 <div class="detail-row">
@@ -242,8 +240,16 @@
                 </div>
             </div>
             @endif
-
-            <!-- Desglose de impuestos -->
+            @php
+                $totalIsh = 0;
+                $ish = 0.05;
+                foreach($data['cfdiResponse']['Items'] as $item) {
+                    if(isset($item['Description']) && $item['Description'] === 'CARGOS ADICIONALES / SERVICIOS EXTRAS') {
+                        continue;
+                    }
+                    $totalIsh += $item['UnitValue'] * $ish;
+                }
+            @endphp
             <div style="background: #f9f9f9; border-radius: 8px; padding: 20px; margin: 20px 0;">
                 <div style="display: flex; justify-content: space-between; padding: 8px 0; font-size: 14px; color: #666;">
                     <span>Subtotal:</span>
@@ -257,10 +263,16 @@
                     </div>
                     @endforeach
                 @endif
+                @if($totalIsh > 0)
+                <div style="display: flex; justify-content: space-between; padding: 8px 0; font-size: 14px; color: #666; border-top: 1px solid #ddd; margin-top: 10px;">
+                    <span>ISH (5%):</span>
+                    <span style="font-weight: 700; color: #333;">${{ number_format($totalIsh, 2) }} MXN</span>
+                </div>
+                @endif
             </div>
 
             <div class="total-section">
-                <div class="total-label">Total a Pagar</div>
+                <div class="total-label">Total facturado</div>
                 <div class="total-amount">${{ number_format($data['cfdiResponse']['Total'], 2) }} MXN</div>
             </div>
 
@@ -276,6 +288,7 @@
         </div>
 
         <div class="footer">
+            <img src="https://rondaminervahotel.com/assets/r.svg" alt="Logo Ronda Minerva" style="max-width: 100px; margin-bottom: 10px;">
             <p><strong>Hotel Ronda Minerva</strong></p>
             <p style="margin-top: 8px;">Este es un correo automático, por favor no responda a este mensaje.</p>
             <p style="margin-top: 5px; font-size: 12px; color: #999;">© {{ date('Y') }} Hotel Ronda Minerva. Todos los derechos reservados.</p>
