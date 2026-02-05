@@ -19,3 +19,5 @@ Route::post('/billing/generate-invoice', [CfdisController::class, 'generateInvoi
 Route::post('/billing/store-cfdi', [CfdisController::class, 'store'])->name('billing.store.cfdi');
 
 Route::get('/invoice-success', [FrontController::class, 'billingSuccess'])->middleware('signed')->name('billing.success');
+
+Route::post('invoice/success/send-email', [FrontController::class, 'sendInvoiceEmail'])->name('invoice.send.email');

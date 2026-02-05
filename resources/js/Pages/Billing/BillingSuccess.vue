@@ -1,8 +1,10 @@
 <script setup>
 import LayoutMain from '../../Layouts/LayoutMain.vue';
-import { ref, reactive  } from 'vue';
+import { ref, reactive } from 'vue';
+import  { formatCurrency }  from '../../../utils/formatCurrency.js';
+import Swal from 'sweetalert2';
+import axios from 'axios';
 import { router } from '@inertiajs/vue3';
-
 const props = defineProps({
   billingData: {
     type: Object,
@@ -25,25 +27,37 @@ const email = ref('');
 const loading = ref(false);
 const emailSent = ref(false);
 
+console.log('props cfdi:', props.billingData);
+
 const sendEmail = () => {
   if (!email.value || !email.value.includes('@')) return;
 
   loading.value = true;
   
-  // Simulación de llamada al API
-  setTimeout(() => {
+  axios.post('/invoice/success/send-email',{
+    cfdiData: props.billingData,
+    email: email.value,
+  }
+  ).then(() => {
+    console.log('Correo enviado con éxito');
     loading.value = false;
     emailSent.value = true;
-    email.value = ''; // Limpiar input
-    
-    // Resetear mensaje de éxito después de 3 segs
-    setTimeout(() => emailSent.value = false, 3000);
-  }, 1500);
-};
+    email.value = '';
+    Swal.fire({
+      icon: 'success',
+      title: 'Correo enviado',
+      text: 'El comprobante ha sido enviado al correo proporcionado.',
+      confirmButtonAriaLabel: 'OK',
+    });
+  }).catch(() => {
+    console.error('Error al enviar el correo');
+    setTimeout(() => {
+      loading.value = false;
+      emailSent.value = true;
+      email.value = '';
+      }, 2000);
+  });
 
-// Formateador de moneda
-const formatCurrency = (value) => {
-  return new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' }).format(value);
 };
 </script>
 
@@ -103,12 +117,14 @@ const formatCurrency = (value) => {
           <span class="font-mono text-indigo-600">{{ formatCurrency(cfdiResponse.Total) }}</span>
         </div>
       </div>
+      <div class="px-6 py-4 bg-gray-50 border-t border-b border-gray-100">
+      <h3 class="text-sm font-semibold text-center text-green-600">El comprobante ha sido enviado al correo registrado.</h3>
+      </div>
       
       
       <div class="p-6 bg-gray-800 text-white relative">
         <div class="absolute top-0 left-0 w-full h-2 bg-gray-50" style="clip-path: polygon(0 0, 100% 0, 100% 100%, 0 0);"></div>
-        
-        <label class="block text-xs uppercase tracking-wider text-gray-400 mb-2">Enviar comprobante por correo</label>
+        <label class="block text-xs uppercase tracking-wider text-gray-400 mb-2">Enviar comprobante a otro correo</label>
         
         <div v-if="!emailSent" class="flex gap-2">
           <input 

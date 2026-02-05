@@ -248,12 +248,12 @@ class FacturamaFilesService
     }
 
     public function sendFilesByEmail(array $data, $client_email)
-    {
+    {   
         // storeResponse desglosado
         Log::info('storeResponse: ' . json_encode($data));
 
-        Log::info("Enviando correo a: " . $data['cfdiData']['Receiver']['Email'] ?? 'No email provided');
-        Mail::to($data['cfdiData']['Receiver']['Email'])->send(new \App\Mail\GenerateInvoice(
+        Log::info("Enviando correo a: " . ($data['cfdiData']['Receiver']['Email'] ?? $client_email));
+        Mail::to($data['cfdiData']['Receiver']['Email'] ?? $client_email)->send(new \App\Mail\GenerateInvoice(
             $data
         ));
 

@@ -9,14 +9,18 @@ use App\Services\CloudbedsService;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\URL;
 use Carbon\Carbon;
+use App\Services\FacturamaFilesService;
+use Illuminate\Support\Facades\Log;
 
 class FrontController extends Controller
 {
     protected CloudbedsService $cloudbedsService;
+    protected FacturamaFilesService $facturamaFilesService;
     
-    public function __construct(CloudbedsService $cloudbedsService)
+    public function __construct(CloudbedsService $cloudbedsService, FacturamaFilesService $facturamaFilesService)
     {
         $this->cloudbedsService = $cloudbedsService;
+        $this->facturamaFilesService = $facturamaFilesService;
     }
 
     public function index()
@@ -83,5 +87,26 @@ class FrontController extends Controller
         return Inertia::render('Billing/BillingSuccess', [
             'billingData' => $billingData,
         ]);
+    }
+
+    public function sendInvoiceEmail(Request $request)
+    {
+        $data = $request->all();
+        $cfdiData = $data['cfdiData'] ?? [];
+
+        try {
+            $this->facturamaFilesService->sendFilesByEmail($cfdiData, $data['email'] ?? null);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Correo enviado con éxito',
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al enviar el correo electrónico: ' . $e->getMessage(),
+            ], 500);
+        }
     }
 }
