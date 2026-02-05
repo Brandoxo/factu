@@ -145,6 +145,17 @@ class CloudbedsService
             ], 422);
         }
 
+        $today = substr(date('Y-m-d'), 5, 6);
+        $cfdiDate = substr($reservation['endDate'], 5, 6) ?? null;
+        if ($cfdiDate !== $today) {
+            return response()->json([
+                'success' => false,
+                'message' => 'La facturación solo está permitida para el mes en curso del checkout.',
+                'cfdi_date' => $cfdiDate,
+                'current_date' => $today,
+                    ], 400);
+        }
+
         // Extraer TODOS los room_id de la respuesta de Cloudbeds
         $allRoomIds = [];
         if ($reservation['balanceDetailed' === 0] ?? false) {
