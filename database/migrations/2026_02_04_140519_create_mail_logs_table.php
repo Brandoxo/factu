@@ -14,7 +14,7 @@ return new class extends Migration
             $table->timestamps();
 
             $table->string('message_id')->unique()->index();
-            $table->timestamp('sent_at'); // desc index below
+            $table->timestamp('sent_at')->nullable(); // desc index below
             $table->string('from_email');
             $table->string('from_name')->nullable();
             $table->string('to_email')->index();
