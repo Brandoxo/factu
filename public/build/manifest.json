@@ -1,0 +1,63 @@
+{
+  "public/assets/icons/Facebook.svg": {
+    "file": "assets/Facebook-BZpEoI1h.svg",
+    "src": "public/assets/icons/Facebook.svg"
+  },
+  "public/assets/icons/Tiktok.svg": {
+    "file": "assets/Tiktok-CVqcgBOB.svg",
+    "src": "public/assets/icons/Tiktok.svg"
+  },
+  "public/assets/icons/WhatsApp Inc.svg": {
+    "file": "assets/WhatsApp Inc-CYR4PYD8.svg",
+    "src": "public/assets/icons/WhatsApp Inc.svg"
+  },
+  "public/assets/icons/menu.svg": {
+    "file": "assets/menu-DGdZRK_K.svg",
+    "src": "public/assets/icons/menu.svg"
+  },
+  "public/assets/img/bg/bg-main.webp": {
+    "file": "assets/bg-main-BQQrR9fW.webp",
+    "src": "public/assets/img/bg/bg-main.webp"
+  },
+  "public/assets/img/logos/logo-white.png": {
+    "file": "assets/logo-white-DRHUMQ_4.png",
+    "src": "public/assets/img/logos/logo-white.png"
+  },
+  "public/assets/img/logos/logo.svg": {
+    "file": "assets/logo-OYpAt-Aj.svg",
+    "src": "public/assets/img/logos/logo.svg"
+  },
+  "public/assets/img/reservationIDExample.jpeg": {
+    "file": "assets/reservationIDExample-Cfur_wR3.jpeg",
+    "src": "public/assets/img/reservationIDExample.jpeg"
+  },
+  "resources/css/app.css": {
+    "file": "assets/app-BhoMDS0h.css",
+    "src": "resources/css/app.css",
+    "isEntry": true,
+    "name": "app",
+    "names": [
+      "app.css"
+    ]
+  },
+  "resources/js/app.js": {
+    "file": "assets/app-DrQOYFX_.js",
+    "name": "app",
+    "src": "resources/js/app.js",
+    "isEntry": true,
+    "css": [
+      "assets/app-BoBWL7CY.css",
+      "assets/app-BhoMDS0h.css"
+    ],
+    "assets": [
+      "assets/logo-OYpAt-Aj.svg",
+      "assets/menu-DGdZRK_K.svg",
+      "assets/logo-white-DRHUMQ_4.png",
+      "assets/WhatsApp Inc-CYR4PYD8.svg",
+      "assets/Facebook-BZpEoI1h.svg",
+      "assets/Tiktok-CVqcgBOB.svg",
+      "assets/reservationIDExample-Cfur_wR3.jpeg",
+      "assets/bg-main-BQQrR9fW.webp"
+    ]
+  }
+}

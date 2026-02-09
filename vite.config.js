@@ -20,7 +20,7 @@ export default defineConfig({
         tailwindcss(),
     ],
     build: {
-        minify: 'terser',
+        minify: 'esbuild',
         terserOptions: {
             compress: {
                 drop_console: true,
