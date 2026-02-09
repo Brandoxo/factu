@@ -18,17 +18,17 @@ export const items = (reservation) => {
       
       if (!isTaxable) {
         // Los impuestos NO están incluidos: calcular sobre el subtotal
-        ish = Number(calculateIsh(roomSubtotal, reservation.startDate.slice(0,4)).toFixed(2));
-        iva = Number((roomSubtotal * 0.16).toFixed(2));
-        roomTotal = Number((roomSubtotal + iva + ish).toFixed(2));
+        ish = Number(calculateIsh(roomSubtotal, reservation.startDate.slice(0,4)).toFixed(6));
+        iva = Number((roomSubtotal * 0.16).toFixed(6));
+        roomTotal = Number((roomSubtotal + iva + ish).toFixed(6));
         console.log('Impuestos NO incluidos - Subtotal:', roomSubtotal, 'IVA:', iva, 'ISH:', ish, 'Total:', roomTotal);
       } else {
         // Los impuestos SÍ están incluidos: extraer el subtotal base
         roomTotal = roomSubtotal; // El total ya incluye los impuestos
-        roomSubtotal = Number((roomTotal / (1 + ishWithIvaPercent[reservation.startDate.slice(0,4)] || ishWithIvaPercent['default'])).toFixed(2)); // Dividir entre 1.21 (1 + 0.16 + 0.04)
+        roomSubtotal = Number((roomTotal / (1 + ishWithIvaPercent[reservation.startDate.slice(0,4)] || ishWithIvaPercent['default'])).toFixed(6)); // Dividir entre 1.21 (1 + 0.16 + 0.04)
         console.log('Subtotal base calculado de total con impuestos incluidos:', roomSubtotal);
-        iva = Number((roomSubtotal * 0.16).toFixed(2));
-        ish = Number((roomTotal - roomSubtotal - iva).toFixed(2)); // Ajustar ISH para que cuadre exacto
+        iva = Number((roomSubtotal * 0.16).toFixed(6));
+        ish = Number((roomTotal - roomSubtotal - iva).toFixed(6)); // Ajustar ISH para que cuadre exacto
         console.log('Impuestos incluidos - Total:', roomTotal, 'Subtotal base:', roomSubtotal, 'IVA:', iva, 'ISH:', ish);
       }
     
