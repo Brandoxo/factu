@@ -86,6 +86,7 @@ class CfdisController extends Controller
                 'storageData' => $storageData,
                 'optionsId' => $cfdiData['optionsId'] ?? null,
                 'extrasId' => $cfdiData['extrasId'] ?? null,
+                'reservedInvoiceId' => $request->input('reservedInvoiceId'),
             ]);
             
             // Verificar si store() retornó un error (JsonResponse)
@@ -103,7 +104,6 @@ class CfdisController extends Controller
         $responseByEmail = $this->facturamaFilesService->sendFilesByEmail(
             $storeResponse, $storeResponse['cfdiData']['Receiver']['Email'] ?? null
         );
-        Log::info('Correo Response: ' . json_encode($responseByEmail));
 
         session()->flash('billing_success_data', [
             'cfdiResponse' => $cfdiResponse_Array,

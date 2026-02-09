@@ -14,6 +14,7 @@ use App\Models\FiscalEntity;
 use Illuminate\Http\JsonResponse;
 use App\Models\TaxStamp;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\DB;
 
 class FacturamaFilesService
 {
@@ -24,6 +25,49 @@ class FacturamaFilesService
         $this->username = env('FACTURAMA_USERAGENT');
         $this->password = env('FACTURAMA_PASSWORD');
     }
+
+    /**
+     * Genera un folio único y seguro contra race conditions
+     * Crea un registro temporal para reservar el folio antes de timbrar
+     * @param array $basicData Datos básicos para crear el registro temporal
+     * @return array ['folio' => '00001', 'invoice_id' => 123]
+     */
+    public function generateUniqueFolio($basicData)
+    {
+        return DB::transaction(function () use ($basicData) {
+            // Obtener el máximo folio existente con lock exclusivo
+            $maxFolio = Invoice::selectRaw('CAST(MAX(CAST(folio AS UNSIGNED)) AS UNSIGNED) as max_folio')
+                ->lockForUpdate()
+                ->first()?->max_folio ?? 0;
+
+            // Incrementar el folio
+            $nextFolio = ($maxFolio ?? 0) + 1;
+            $folioFormatted = str_pad($nextFolio, 5, '0', STR_PAD_LEFT) . '-' . 'H'; // Sufijo para diferenciar folios de hotel
+
+            // Prevenir duplicados incluso con múltiples peticiones simultáneas
+            $invoice = Invoice::create([
+                'fiscal_entity_id' => null, // Se actualizará después cuando se cree el fiscal_entity
+                'reservation_id' => $basicData['reservation_id'] ?? '0',
+                'order_id' => $basicData['order_id'] ?? 0,
+                'folio' => $folioFormatted,
+                'subtotal' => 0,
+                'total' => 0,
+                'pdf_path' => null,
+                'xml_path' => null,
+                'facturama_id' => null,
+                'cfdi_uuid' => null,
+                'status' => 'draft', // Estado temporal hasta que se timbre
+                'payment_form' => null,
+                'payment_method' => null,
+                'use_cfdi' => null,
+            ]);
+
+            return [
+                'folio' => $folioFormatted,
+                'invoice_id' => $invoice->id,
+            ];
+        }, attempts: 3);
+    }
     
     public function fetchCfdiFromApi($datosCfdi, $filteredRoomsAvailable, $optionsId, $request)
     {
@@ -31,6 +75,16 @@ class FacturamaFilesService
     $password = $this->password;
 
     $datosCfdi = $request->cfdiData;
+
+    // Generar folio único y crear registro temporal para reservarlo
+    $folioData = $this->generateUniqueFolio([
+        'reservation_id' => $optionsId['reservationId'] ?? '0',
+        'order_id' => $optionsId['orderId'] ?? 0,
+    ]);
+    
+    $datosCfdi['Folio'] = $folioData['folio'];
+    $request->merge(['reservedInvoiceId' => $folioData['invoice_id']]); // Agregar el ID de la factura reservada a la request para usarlo después
+    $folio = $folioData['folio'];
 
     $currentReservationsId = [];
     foreach ($datosCfdi['Items'] as $index) {
@@ -67,10 +121,13 @@ class FacturamaFilesService
     if (!$cfdiResponse->successful()) {
         return response()->json([
             'success' => false,
-            'message' => 'Error al timbrar CFDI',
+            'message' => 'Error al timbrar CFDI'. ' Verifique que los datos sean correctos.',
             'facturama' => $cfdiResponse->json()
         ], 500);
     }
+
+    // Almacenar el folio en la request para usarlo en storeCfdiData
+    $request->merge(['generatedFolio' => $folio]);
 
     return $cfdiResponse;
     }
@@ -122,11 +179,14 @@ class FacturamaFilesService
 
     public function storeCfdiData(array $data)
     {
+        
+
         $cfdiData     = $data['cfdiData']['cfdiData'] ?? [];
         $cfdiResponse = $data['cfdiResponse'];
         $storageResponse  = $data['storageData'];
         $optionsId = $data['optionsId'] ?? null;
         $taxStampData = $cfdiResponse['Complement']['TaxStamp'] ?? [];
+        $reservedInvoiceId = $data['reservedInvoiceId'] ?? null;
         $subReservationIDs = $data['extrasId']['subReservationIDs'] ?? null;
         $roomIDs = $data['extrasId']['roomIDs'] ?? null;
 
@@ -164,22 +224,37 @@ class FacturamaFilesService
         );
         $fiscalEntity->save();
         
-                $invoice = new Invoice([
-                    'fiscal_entity_id' => $fiscalEntity->id,
-                    'reservation_id' => $optionsId['reservationId'] ?? '0',
-                    'order_id' => $optionsId['orderId'] ?? 0,
-                    'subtotal' => $cfdiResponse['Subtotal'] ?? 0,
-                    'total' => $cfdiResponse['Total'] ?? 0,
-                    'pdf_path' => "cfdis/{$storageResponse['id']}.pdf",
-                    'xml_path' => "cfdis/{$storageResponse['id']}.xml",
-                    'facturama_id' => $cfdiResponse['Id'] ?? null,
-                    'cfdi_uuid' => $taxStampData['Uuid'] ?? null,
-                    'status' => $cfdiResponse['Status'] ?? 'draft',
-                    'payment_form' => $cfdiResponse['PaymentTerms'] ?? null,
-                    'payment_method' => $cfdiResponse['PaymentMethod'] ?? null,
-                    'use_cfdi' => $receiverData['CfdiUse'] ?? null,
-                ]);
-        $invoice->save();
+        $invoicePayload = [
+            'fiscal_entity_id' => $fiscalEntity->id,
+            'reservation_id' => $optionsId['reservationId'] ?? '0',
+            'order_id' => $optionsId['orderId'] ?? 0,
+            'subtotal' => $cfdiResponse['Subtotal'] ?? 0,
+            'total' => $cfdiResponse['Total'] ?? 0,
+            'pdf_path' => "cfdis/{$storageResponse['id']}.pdf",
+            'xml_path' => "cfdis/{$storageResponse['id']}.xml",
+            'facturama_id' => $cfdiResponse['Id'] ?? null,
+            'cfdi_uuid' => $taxStampData['Uuid'] ?? null,
+            'status' => $cfdiResponse['Status'] ?? 'draft',
+            'payment_form' => $cfdiResponse['PaymentTerms'] ?? null,
+            'payment_method' => $cfdiResponse['PaymentMethod'] ?? null,
+            'use_cfdi' => $receiverData['CfdiUse'] ?? null,
+        ];
+
+        // Verificar si storeCfdiData recibió un ID de factura reservada para actualizar en lugar de crear una nueva
+        $invoice = null;
+        if ($reservedInvoiceId) {
+            $invoice = Invoice::find($reservedInvoiceId);
+            Log::info("Factura reservada encontrada para ID: {$reservedInvoiceId}", ['invoice' => $invoice]);
+        }
+
+        // Si se encontró la factura reservada y está en estado 'draft', actualizarla. De lo contrario, crear una nueva factura.
+        if ($invoice && $invoice->status === 'draft') {
+            $invoice->fill($invoicePayload);
+            $invoice->save();
+        } else {
+            $invoice = new Invoice($invoicePayload);
+            $invoice->save();
+        }
 
         $taxStamp = new TaxStamp([
             'invoice_id' => $invoice->id,
@@ -250,9 +325,7 @@ class FacturamaFilesService
     public function sendFilesByEmail(array $data, $client_email)
     {   
         // storeResponse desglosado
-        Log::info('storeResponse: ' . json_encode($data));
 
-        Log::info("Enviando correo a: " . ($data['cfdiData']['Receiver']['Email'] ?? $client_email));
         Mail::to($data['cfdiData']['Receiver']['Email'] ?? $client_email)->send(new \App\Mail\GenerateInvoice(
             $data
         ));
