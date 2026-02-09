@@ -56,14 +56,14 @@ const displayRoomTotal = (room) => {
       (
         subtotal /
         (1 + ishWithIvaPercent[yearReservation] || ishWithIvaPercent["default"])
-      ).toFixed(2),
+      ).toFixed(6),
     );
     console.log("Total base sin impuestos:", totalBase);
-    return totalBase.toFixed(2);
+    return totalBase.toFixed(6);
   }
 
   const iva = subtotal * 0.16;
-  return Number((subtotal + iva + ish).toFixed(2));
+  return Number((subtotal + iva + ish).toFixed(6));
 };
 
 const filteredRoomsAvailable = computed(() => {
@@ -120,10 +120,10 @@ const totalToInvoice = computed(() => {
         // Los impuestos NO están incluidos: sumar subtotal + impuestos
         const ish = calculateIsh(roomSubtotal, yearReservation);
         const iva = roomSubtotal * 0.16;
-        total += Number((roomSubtotal + iva + ish).toFixed(2));
+        total += Number((roomSubtotal + iva + ish).toFixed(6));
       } else {
         // Los impuestos SÍ están incluidos: el subtotal ya es el total
-        total += Number(roomSubtotal.toFixed(2));
+        total += Number(roomSubtotal.toFixed(6));
       }
     }
   });
@@ -138,7 +138,7 @@ const totalToInvoice = computed(() => {
     total += additionalAmount;
   }
 
-  return Number(total.toFixed(2));
+  return Number(total.toFixed(6));
 });
 
 // Computed para obtener los items filtrados

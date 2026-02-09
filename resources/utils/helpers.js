@@ -1,7 +1,7 @@
 export const getTotalRate = (dailyRates) => {
   if (!Array.isArray(dailyRates)) return 0;
   const total = dailyRates.reduce((sum, item) => sum + (item.rate || 0), 0);
-  return Number((total * 100 / 100).toFixed(2));
+  return Number((total * 100 / 100).toFixed(6));
 };
 
 export const calculateIsh = (subtotal, reservationDate) => {
@@ -11,7 +11,7 @@ export const calculateIsh = (subtotal, reservationDate) => {
   } else {
   Ish = 0.04; // Tasa del ISH (4%)
   }
-  let totalIsh = Number((subtotal * Ish).toFixed(2));
+  let totalIsh = Number((subtotal * Ish).toFixed(6));
   return totalIsh;
 };
 

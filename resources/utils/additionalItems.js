@@ -3,13 +3,13 @@ export const additionalItems = (reservation, startIndex) => {
   let additionalItemsValue = reservation.balanceDetailed.additionalItems;
   console.log("Generando item adicional con valor desde AdditionaItems:", additionalItemsValue);
 
-  const subTotalExtra = Number(additionalItemsValue / 1.16).toFixed(2);
+  const subTotalExtra = Number(additionalItemsValue / 1.16).toFixed(6);
   console.log("Valor de cargos adicionales ajustado (sin IVA):", subTotalExtra);
 
-  let ivaExtra = (subTotalExtra * 0.16).toFixed(2);
+  let ivaExtra = (subTotalExtra * 0.16).toFixed(6);
   console.log("IVA calculado para cargos adicionales:", ivaExtra);
   
-  let totalExtra = Number(additionalItemsValue).toFixed(2);
+  let totalExtra = Number(additionalItemsValue).toFixed(6);
   console.log("Total de cargos adicionales calculado:", totalExtra);
   
   return {
