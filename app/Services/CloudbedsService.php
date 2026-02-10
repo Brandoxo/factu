@@ -146,8 +146,8 @@ class CloudbedsService
             ], 422);
         }
 
-        $today = substr(date('Y-m-d'), 5, 6);
-        $cfdiDate = substr($reservation['endDate'], 5, 6) ?? null;
+        $today = substr(date('Y-m-d'), 0, 7);
+        $cfdiDate = substr($reservation['endDate'], 0, 7) ?? null;
         if ($cfdiDate !== $today) {
             return response()->json([
                 'success' => false,
@@ -159,7 +159,7 @@ class CloudbedsService
 
         // Extraer TODOS los room_id de la respuesta de Cloudbeds
         $allRoomIds = [];
-        if ($reservation['balanceDetailed' === 0] ?? false) {
+        if (($reservation['balanceDetailed'] ?? 0) === 0) {
             $allRoomIds[] = $reservation['reservationID'] . '-extras';
         }
         if (isset($reservation['assigned']) && is_array($reservation['assigned'])) {
