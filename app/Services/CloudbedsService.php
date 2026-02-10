@@ -19,10 +19,11 @@ class CloudbedsService
      */
     public function fetchReservationFromAPI($reservationID)
     {
+        $apiKey = env('CLOUDBEDS_API_KEY');
         $response = Http::withHeaders([
-            'Authorization' => 'Bearer ' . env('CLOUDBEDS_API_KEY'),
+            'x-api-key' => $apiKey,
             'Accept'        => 'application/json',
-        ])->get('https://api.cloudbeds.com/api/v1.3/getReservation', [
+        ])->get('https://api.cloudbeds.com/api/v1.2/getReservation', [
             'reservationID' => $reservationID,
         ]);
 
