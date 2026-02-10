@@ -60,7 +60,7 @@ export const items = (reservation) => {
           Total: ish, //Total del ISH (0 si no aplica)
           Name: "ISH", //Nombre del impuesto local
           Base: roomSubtotal, //Base sobre la cual se calcula el ISH
-          Rate: 0.04, //Tasa del ISH (4%)
+          Rate: 0.05, //Tasa del ISH (5%)
           IsRetention: false, //Indica si es una retención o un traslado
         }
         ],
