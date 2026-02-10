@@ -20,3 +20,7 @@ export const ishWithIvaPercent =
   '2026': 0.21,
   'default': 0.20
 };
+
+export const round6 = (value) => {
+  return Math.round((value + Number.EPSILON) * 1000000) / 1000000;
+}

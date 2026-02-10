@@ -2,35 +2,49 @@ import { getTotalRate } from "./helpers";
 import { calculateIsh } from "./helpers.js";
 import { additionalItems } from "./additionalItems.js";
 import { ishWithIvaPercent } from "./helpers.js";
+import { round6 } from "./helpers.js";
 
 export const items = (reservation) => {
   // Generar items de habitaciones
   const roomItems = reservation.assigned.map((room, index) => {
-    let roomSubtotal = getTotalRate(room.dailyRates);
-    console.log('Subtotal de la habitación calculado:', roomSubtotal);
+    let roomSubtotalRaw = getTotalRate(room.dailyRates);
+    console.log('Subtotal de la habitación calculado:', roomSubtotalRaw);
       const taxesIncluded = reservation.balanceDetailed.taxesFees;
       const isTaxable = taxesIncluded === 0 ? true : false;
+
+      const IVA_RATE = 0.16; // Tasa de IVA (16%)
+      const ISH_RATE = 0.05; // Tasa de ISH (5%)
       
       let ish = 0;
       let iva = 0;
+      let roomSubtotal = 0;
       let roomTotal = 0;
-      let totalBase = 0;
       
-      if (!isTaxable) {
-        // Los impuestos NO están incluidos: calcular sobre el subtotal
-        ish = Number(calculateIsh(roomSubtotal, reservation.startDate.slice(0,4)).toFixed(6));
-        iva = Number((roomSubtotal * 0.16).toFixed(6));
-        roomTotal = Number((roomSubtotal + iva + ish).toFixed(6));
-        console.log('Impuestos NO incluidos - Subtotal:', roomSubtotal, 'IVA:', iva, 'ISH:', ish, 'Total:', roomTotal);
-      } else {
-        // Los impuestos SÍ están incluidos: extraer el subtotal base
-        roomTotal = roomSubtotal; // El total ya incluye los impuestos
-        roomSubtotal = Number((roomTotal / (1 + ishWithIvaPercent[reservation.startDate.slice(0,4)] || ishWithIvaPercent['default'])).toFixed(6)); // Dividir entre 1.21 (1 + 0.16 + 0.04)
-        console.log('Subtotal base calculado de total con impuestos incluidos:', roomSubtotal);
-        iva = Number((roomSubtotal * 0.16).toFixed(6));
-        ish = Number((roomTotal - roomSubtotal - iva).toFixed(6)); // Ajustar ISH para que cuadre exacto
-        console.log('Impuestos incluidos - Total:', roomTotal, 'Subtotal base:', roomSubtotal, 'IVA:', iva, 'ISH:', ish);
-      }
+if (isTaxable) {
+            // Los impuestos NO están incluidos
+            roomSubtotal = round6(roomSubtotalRaw);
+            
+            // Calculamos impuestos directos sobre la base
+            iva = round6(roomSubtotal * IVA_RATE);
+            ish = round6(roomSubtotal * ISH_RATE);
+            
+            // Total es la suma de todo
+            roomTotal = round6(roomSubtotal + iva + ish);
+            
+        } else {
+            // Obtenemos el factor de impuestos basado en la fecha de la reserva
+            const taxFactor = 1 + (ishWithIvaPercent[reservation.startDate.slice(0, 4)] || ishWithIvaPercent['default']);
+            
+            // Obtenemos el Subtotal (Base) dividiendo el total entre el factor
+            roomSubtotal = round6(roomSubtotalRaw / taxFactor);
+            
+            // Calculamos los impuestos a partir del subtotal
+            iva = round6(roomSubtotal * IVA_RATE);
+            ish = round6(roomSubtotal * ISH_RATE); 
+            
+            // El total ya está dado por roomSubtotalRaw, pero lo recalculamos para asegurarnos de que todo cuadre
+            roomTotal = round6(roomSubtotal + iva + ish);
+        }
     
     return {
       ProductCode: "90111500", //Código estándar para servicios de alojamiento
@@ -53,14 +67,14 @@ export const items = (reservation) => {
           Total: iva, //Total del impuesto
           Name: "IVA", //Nombre del impuesto
           Base: roomSubtotal, //Base sobre la cual se calcula el impuesto
-          Rate: 0.16, //Tasa del impuesto (16% en este caso)
+          Rate: IVA_RATE, //Tasa del impuesto (16% en este caso)
           IsRetention: false, //Indica si es una retención o un traslado
         },
         {
           Total: ish, //Total del ISH (0 si no aplica)
           Name: "ISH", //Nombre del impuesto local
           Base: roomSubtotal, //Base sobre la cual se calcula el ISH
-          Rate: 0.05, //Tasa del ISH (5%)
+          Rate: ISH_RATE, //Tasa del ISH (5%)
           IsRetention: false, //Indica si es una retención o un traslado
         }
         ],
