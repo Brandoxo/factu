@@ -157,13 +157,13 @@ const selectedItems = computed(() => {
 });
 
 const form = useForm({
-  rfc: "",
-  razonSocial: "",
-  email: "",
-  codigoPostal: "",
-  regimenFiscal: "",
-  usoCfdi: "",
-  paymentMethod: "",
+  rfc: "BEMB991224LP3",
+  razonSocial: "BRANDON SAUL BERMEJO MEDINA",
+  email: "desarrollo.software@pcbtroniks.com",
+  codigoPostal: "45519",
+  regimenFiscal: "625",
+  usoCfdi: "G03",
+  paymentMethod: "01",
 });
 
 const extrasId = computed(() => {
@@ -222,7 +222,9 @@ const submitBillingForm = async () => {
     Swal.fire({"title": "¡Éxito!", "text": "Factura creada correctamente", "icon": "success"});
     // Redirigir a la página de éxito con URL firmada
     setTimeout(() => {
-      window.location.href = response.data.successUrl;
+      console.log("Proccess proccessed oyeah oyeah");
+      
+      //window.location.href = response.data.successUrl;
     }, 2000);
   } catch (error) {
     console.error("Error en la petición:", error.response?.data || error.message || error);
