@@ -281,8 +281,8 @@
             <div class="download-section">
                 <p class="download-title">📥 Descargue sus archivos fiscales</p>
                 <div class="btn-container">
-                    <a href="{{ $data['storageResponse']['files']['pdf'] }}" class="btn btn-pdf">📄 Descargar PDF</a>
-                    <a href="{{ $data['storageResponse']['files']['xml'] }}" class="btn btn-xml">📋 Descargar XML</a>
+                    <a href="{{ route('invoice.download', ['Id' => $data['cfdiResponse']['Id']]) }}" class="btn btn-pdf">📄 Descargar PDF</a>
+                    <a href="{{ route('invoice.download.xml', ['Id' => $data['cfdiResponse']['Id']]) }}" class="btn btn-xml">📋 Descargar XML</a>
                 </div>
             </div>
         </div>

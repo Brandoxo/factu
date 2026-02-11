@@ -3,6 +3,7 @@
 use App\Http\Controllers\CfdisController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\FrontController;
+use App\Http\Controllers\FilesController;
 
 Route::redirect('/', '/services');
 
@@ -21,3 +22,6 @@ Route::post('/billing/store-cfdi', [CfdisController::class, 'store'])->name('bil
 Route::get('/invoice-success', [FrontController::class, 'billingSuccess'])->middleware('signed')->name('billing.success');
 
 Route::post('invoice/success/send-email', [FrontController::class, 'sendInvoiceEmail'])->name('invoice.send.email');
+
+Route::get('/invoice/{Id}/pdf/download', [FilesController::class, 'downloadInvoicePdf'])->name('invoice.download');
+Route::get('/invoice/{Id}/xml/download', [FilesController::class, 'downloadInvoiceXML'])->name('invoice.download.xml');
