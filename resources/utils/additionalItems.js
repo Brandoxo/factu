@@ -3,13 +3,13 @@ export const additionalItems = (reservation, startIndex) => {
   let additionalItemsValue = reservation.balanceDetailed.additionalItems;
   console.log("Generando item adicional con valor desde AdditionaItems:", additionalItemsValue);
 
-  const subTotalExtra = Number(additionalItemsValue / 1.16).toFixed(6);
+  const subTotalExtra = (additionalItemsValue / 1.16).toFixed(6);
   console.log("Valor de cargos adicionales ajustado (sin IVA):", subTotalExtra);
 
-  let ivaExtra = (subTotalExtra * 0.16).toFixed(6);
+  let ivaExtra = (parseFloat(subTotalExtra) * 0.16).toFixed(6);
   console.log("IVA calculado para cargos adicionales:", ivaExtra);
   
-  let totalExtra = Number(additionalItemsValue).toFixed(6);
+  let totalExtra = parseFloat(additionalItemsValue).toFixed(6);
   console.log("Total de cargos adicionales calculado:", totalExtra);
   
   return {
@@ -21,7 +21,7 @@ export const additionalItems = (reservation, startIndex) => {
     UnitPrice: subTotalExtra, //Precio unitario del servicio
     Quantity: 1, //Cantidad de servicios
     Subtotal: subTotalExtra, //Subtotal antes de impuestos
-    Discount: 0.0, //Descuento aplicado, si es que hay alguno
+    Discount: "0.000000", //Descuento aplicado, si es que hay alguno
     TaxObject: "02", //Objeto del impuesto, "02" para servicios gravados
           // Impuestos aplicables: solo incluir cuando el Objeto de Impuesto sea "02"
         Taxes: [
@@ -29,7 +29,7 @@ export const additionalItems = (reservation, startIndex) => {
           Total: ivaExtra, //Total del impuesto
           Name: "IVA", //Nombre del impuesto
           Base: subTotalExtra, //Base sobre la cual se calcula el impuesto
-          Rate: 0.16, //Tasa del impuesto (16% en este caso)
+          Rate: "0.160000", //Tasa del impuesto (16% en este caso)
           IsRetention: false, //Indica si es una retención o un traslado
         }
         ],
