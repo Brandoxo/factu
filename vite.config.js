@@ -27,6 +27,9 @@ export default defineConfig({
             },
         },
     },
+    esbuild: {
+        drop: ['console', 'debugger'],
+    },
     server: {
         watch: {
             ignored: ['**/storage/framework/views/**'],
