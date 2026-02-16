@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\IsAdminOrDev;
 use Illuminate\Session\Middleware\AuthenticateSession;
 
 return [
@@ -12,7 +13,7 @@ return [
     | You can add your own middleware here. Use this to restrict who can see the mail log.
     |
     */
-    'middleware' => [AuthenticateSession::class],
+    'middleware' => [AuthenticateSession::class, IsAdminOrDev::class],
 
     /*
     |--------------------------------------------------------------------------
