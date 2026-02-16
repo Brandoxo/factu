@@ -47,7 +47,7 @@
 
   
   > <div> 
-    <a target="_blank" href="tel:333623200" class="bg-salmon">
+    <a target="_blank" href="https://api.whatsapp.com/send/?phone=%2B523312490519&text=Hola,%20tengo%20unda%20duda%20sobre%20las%20facturas." class="bg-salmon">
                 <img class="w-8 sm:w-10" src="/public/assets/icons/WhatsApp Inc.svg" alt="menu">
             </a>
     </div>

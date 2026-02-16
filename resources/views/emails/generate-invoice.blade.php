@@ -281,14 +281,14 @@
             <div class="download-section">
                 <p class="download-title">📥 Descargue sus archivos fiscales</p>
                 <div class="btn-container">
-                    <a href="{{ $data['storageResponse']['files']['pdf'] }}" class="btn btn-pdf">📄 Descargar PDF</a>
-                    <a href="{{ $data['storageResponse']['files']['xml'] }}" class="btn btn-xml">📋 Descargar XML</a>
+                    <a href="{{ route('invoice.download', ['Id' => $data['cfdiResponse']['Id']]) }}" class="btn btn-pdf">📄 Descargar PDF</a>
+                    <a href="{{ route('invoice.download.xml', ['Id' => $data['cfdiResponse']['Id']]) }}" class="btn btn-xml">📋 Descargar XML</a>
                 </div>
             </div>
         </div>
 
         <div class="footer">
-            <img src="https://rondaminervahotel.com/assets/r.svg" alt="Logo Ronda Minerva" style="max-width: 100px; margin-bottom: 10px;">
+            <img src="{{ asset('assets/img/logos/logo.svg') }}" alt="Logo Ronda Minerva" style="max-width: 100px; margin-bottom: 10px;">
             <p><strong>Hotel Ronda Minerva</strong></p>
             <p style="margin-top: 8px;">Este es un correo automático, por favor no responda a este mensaje.</p>
             <p style="margin-top: 5px; font-size: 12px; color: #999;">© {{ date('Y') }} Hotel Ronda Minerva. Todos los derechos reservados.</p>
