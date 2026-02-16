@@ -71,6 +71,13 @@ class FacturamaFilesService
     
     public function fetchCfdiFromApi($datosCfdi, $filteredRoomsAvailable, $optionsId, $request)
     {
+
+    if(env('APP_ENV') === 'production'){
+        $endpoint = env('FACTURAMA_PROD_ENDPOINT');
+    } else {
+        $endpoint = env('FACTURAMA_DEV_ENDPOINT');
+    }
+
     $username = $this->username;
     $password = $this->password;
 
@@ -116,7 +123,7 @@ class FacturamaFilesService
 
     $cfdiResponse = Http::withBasicAuth($username, $password)
         ->withoutVerifying()
-        ->post('https://apisandbox.facturama.mx/3/cfdis', $datosCfdi);
+        ->post("https://{$endpoint}/3/cfdis", $datosCfdi);
 
     if (!$cfdiResponse->successful()) {
         return response()->json([
@@ -134,7 +141,13 @@ class FacturamaFilesService
 
     public function storeCfdiFiles($cfdiResponse)
     {
-        
+    
+    if(env('APP_ENV') === 'production'){
+        $endpoint = env('FACTURAMA_PROD_ENDPOINT');
+    } else {
+        $endpoint = env('FACTURAMA_DEV_ENDPOINT');
+    }
+
     $username = $this->username;
     $password = $this->password;
 
@@ -149,13 +162,14 @@ class FacturamaFilesService
         ], 500);
     }
 
+
     $xml = Http::withBasicAuth($username, $password)
         ->withoutVerifying()
-        ->get("https://apisandbox.facturama.mx/xml/payroll/{$id}");
+        ->get("https://{$endpoint}/xml/payroll/{$id}");
 
     $pdf = Http::withBasicAuth($username, $password)
         ->withoutVerifying()
-        ->get("https://apisandbox.facturama.mx/pdfi/payroll/{$id}");
+        ->get("https://{$endpoint}/pdfi/payroll/{$id}");
 
     if (!$xml->successful() || !$pdf->successful()) {
         return response()->json([
