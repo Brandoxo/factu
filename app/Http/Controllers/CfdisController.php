@@ -112,10 +112,15 @@ class CfdisController extends Controller
             $storeResponse, $storeResponse['cfdiData']['Receiver']['Email'] ?? null
         );
 
+        $responseByEmailAdmin = $this->facturamaFilesService->sendFilesByEmailToAdmin(
+            $storeResponse
+        );
+
         session()->flash('billing_success_data', [
             'cfdiResponse' => $cfdiResponse_Array,
             'storageResponse' => $storageData,
             'emailSent' => $responseByEmail,
+            'emailSentToAdmin' => $responseByEmailAdmin,
         ]);
 
         // Generar URL firmada para la página de éxito

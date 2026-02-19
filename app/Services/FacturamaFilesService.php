@@ -386,4 +386,18 @@ class FacturamaFilesService
             'message' => 'Correo enviado correctamente',
         ]);
     }
+
+    public function sendFilesByEmailToAdmin(array $data)
+    {   
+        Log::info('Enviando correo al administrador con los datos de la factura', ['data' => $data]);
+        $adminEmail = 'facturacion@rondaminervahotel.com';
+        Mail::to($adminEmail)->send(new \App\Mail\GenerateInvoiceToAdmin(
+            $data
+        ));
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Correo enviado correctamente al administrador',
+        ]);
+    }
 }
