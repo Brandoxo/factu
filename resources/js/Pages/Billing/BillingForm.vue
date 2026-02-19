@@ -238,7 +238,7 @@ const submitBillingForm = async () => {
     <div class="max-w-4xl mx-auto py-8 px-4">
       <div class="flex-col flex gap-0 m-6">
         <h1 class="text-3xl text-white text-center uppercase">
-          Hotel Ronda Minerva S.A de CV
+          HOTELERA FERROGAL S.A de CV
         </h1>
         <h2 class="text-2xl text-white text-center uppercase">
           Generar
