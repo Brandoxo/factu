@@ -101,6 +101,13 @@ class CfdisController extends Controller
         }
         
 
+        if (!($storeResponse['success'] ?? false)) {
+            return response()->json([
+                'success' => false,
+                'message' => $storeResponse['message'] ?? 'Error al guardar CFDI',
+            ], 500);
+        }
+
         $responseByEmail = $this->facturamaFilesService->sendFilesByEmail(
             $storeResponse, $storeResponse['cfdiData']['Receiver']['Email'] ?? null
         );

@@ -163,23 +163,27 @@ class FacturamaFilesService
     }
 
 
+    $cfdiType = 'issued';
     $xml = Http::withBasicAuth($username, $password)
         ->withoutVerifying()
-        ->get("https://{$endpoint}/xml/payroll/{$id}");
+        ->get("https://{$endpoint}/api/Cfdi/xml/{$cfdiType}/{$id}");
 
     $pdf = Http::withBasicAuth($username, $password)
         ->withoutVerifying()
-        ->get("https://{$endpoint}/pdfi/payroll/{$id}");
+        ->get("https://{$endpoint}/api/Cfdi/pdf/{$cfdiType}/{$id}");
 
-    if (!$xml->successful() || !$pdf->successful()) {
+    $xmlBody = $this->extractFacturamaContent($xml);
+    $pdfBody = $this->extractFacturamaContent($pdf);
+
+    if (!$xml->successful() || !$pdf->successful() || $xmlBody === '' || $pdfBody === '') {
         return response()->json([
             'success' => false,
             'message' => 'No se pudieron descargar los archivos'
         ], 500);
     }
 
-    Storage::put("cfdis/{$id}.xml", $xml->body());
-    Storage::put("cfdis/{$id}.pdf", $pdf->body());
+    Storage::put("cfdis/{$id}.xml", $xmlBody);
+    Storage::put("cfdis/{$id}.pdf", $pdfBody);
 
     return response()->json([
         'success' => true,
@@ -189,6 +193,22 @@ class FacturamaFilesService
             'pdf' => url("storage/cfdis/{$id}.pdf"),
         ]
     ]);
+    }
+
+    private function extractFacturamaContent($response)
+    {
+        $payload = $response->json();
+        if (is_array($payload) && isset($payload['Content'])) {
+            $content = $payload['Content'] ?? '';
+            if (($payload['ContentEncoding'] ?? '') === 'base64') {
+                $decoded = base64_decode($content, true);
+                return $decoded === false ? '' : $decoded;
+            }
+
+            return is_string($content) ? $content : '';
+        }
+
+        return $response->body() ?? '';
     }
 
     public function storeCfdiData(array $data)
@@ -220,14 +240,20 @@ class FacturamaFilesService
         $lastName = $nameParts[2] ?? $nameParts[1] ?? '';
         $simplifiedName = trim($firstName . ' ' . $lastName);
 
-        $client = Client::firstOrCreate(
+        try {
+
+            $result = DB::transaction(function () use ($receiverData, $simplifiedName, $cfdiResponse, $storageResponse, $taxStampData, $optionsId, $reservedInvoiceId, $cfdiData) {
+        
+            $client = Client::firstOrCreate(
             [
                 'internal_name' => $simplifiedName,
                 'email' => $receiverData['Email'] ?? null,
             ]
-        );
+       
+            );
         
-        $fiscalEntity = new FiscalEntity(
+        
+            $fiscalEntity = new FiscalEntity(
             [   
                 'client_id'  => $client->id,
                 'legal_name' => $receiverData['Name'] ?? 'Sin nombre',
@@ -235,105 +261,116 @@ class FacturamaFilesService
                 'tax_regime' => $receiverData['FiscalRegime'] ?? null,
                 'zip_code'   => $receiverData['TaxZipCode'] ?? null,
             ]
-        );
-        $fiscalEntity->save();
+            );
+            $fiscalEntity->save();
         
-        $invoicePayload = [
-            'fiscal_entity_id' => $fiscalEntity->id,
-            'reservation_id' => $optionsId['reservationId'] ?? '0',
-            'order_id' => $optionsId['orderId'] ?? 0,
-            'subtotal' => $cfdiResponse['Subtotal'] ?? 0,
-            'total' => $cfdiResponse['Total'] ?? 0,
-            'pdf_path' => "cfdis/{$storageResponse['id']}.pdf",
-            'xml_path' => "cfdis/{$storageResponse['id']}.xml",
-            'facturama_id' => $cfdiResponse['Id'] ?? null,
-            'cfdi_uuid' => $taxStampData['Uuid'] ?? null,
-            'status' => $cfdiResponse['Status'] ?? 'draft',
-            'payment_form' => $cfdiResponse['PaymentTerms'] ?? null,
-            'payment_method' => $cfdiResponse['PaymentMethod'] ?? null,
-            'use_cfdi' => $receiverData['CfdiUse'] ?? null,
-        ];
+            $invoicePayload = [
+                'fiscal_entity_id' => $fiscalEntity->id,
+                'reservation_id' => $optionsId['reservationId'] ?? '0',
+                'order_id' => $optionsId['orderId'] ?? 0,
+                'subtotal' => $cfdiResponse['Subtotal'] ?? 0,
+                'total' => $cfdiResponse['Total'] ?? 0,
+                'pdf_path' => "cfdis/{$storageResponse['id']}.pdf",
+                'xml_path' => "cfdis/{$storageResponse['id']}.xml",
+                'facturama_id' => $cfdiResponse['Id'] ?? null,
+                'cfdi_uuid' => $taxStampData['Uuid'] ?? null,
+                'status' => $cfdiResponse['Status'] ?? 'draft',
+                'payment_form' => $cfdiResponse['PaymentTerms'] ?? null,
+                'payment_method' => $cfdiResponse['PaymentMethod'] ?? null,
+                'use_cfdi' => $receiverData['CfdiUse'] ?? null,
+            ];
 
-        // Verificar si storeCfdiData recibió un ID de factura reservada para actualizar en lugar de crear una nueva
-        $invoice = null;
-        if ($reservedInvoiceId) {
-            $invoice = Invoice::find($reservedInvoiceId);
-            Log::info("Factura reservada encontrada para ID: {$reservedInvoiceId}", ['invoice' => $invoice]);
-        }
+            // Verificar si storeCfdiData recibió un ID de factura reservada para actualizar en lugar de crear una nueva
+            $invoice = null;
+            if ($reservedInvoiceId) {
+                $invoice = Invoice::find($reservedInvoiceId);
+                Log::info("Factura reservada encontrada para ID: {$reservedInvoiceId}", ['invoice' => $invoice]);
+            }
 
-        // Si se encontró la factura reservada y está en estado 'draft', actualizarla. De lo contrario, crear una nueva factura.
-        if ($invoice && $invoice->status === 'draft') {
-            $invoice->fill($invoicePayload);
-            $invoice->save();
-        } else {
-            $invoice = new Invoice($invoicePayload);
-            $invoice->save();
-        }
+            // Si se encontró la factura reservada y está en estado 'draft', actualizarla. De lo contrario, crear una nueva factura.
+            if ($invoice && $invoice->status === 'draft') {
+                $invoice->fill($invoicePayload);
+                $invoice->save();
+            } else {
+                $invoice = new Invoice($invoicePayload);
+                $invoice->save();
+            }
 
-        $taxStamp = new TaxStamp([
-            'invoice_id' => $invoice->id,
-            'cfdi_sign' => $taxStampData['CfdiSign'] ?? null,
-            'rfc_prov_certif' => $taxStampData['RfcProvCertif'] ?? null,
-            'sat_cert_number' => $taxStampData['SatCertNumber'] ?? null,
-            'sat_sign' => $taxStampData['SatSign'] ?? null,
-            'date_time' => $taxStampData['Date'] ?? null,
-        ]);
-        $taxStamp->save();
-
-        $invoiceItemsData = $cfdiResponse['Items'] ?? [];
-
-        foreach ($invoiceItemsData as $index => $itemData) {
-            $invoiceItem = new InvoiceItem([
+            $taxStamp = new TaxStamp([
                 'invoice_id' => $invoice->id,
-                'product_code_sat' => $itemData['ProductCode'] ?? '',
-                'unit_code_sat' => $itemData['UnitCode'] ?? '',
-                'description' => $itemData['Description'] ?? '',
-                'quantity' => $itemData['Quantity'] ?? 0,
-                'unit_price' => $itemData['UnitValue'] ?? 0,
-                'sub_reservation_id' => $cfdiData['Items'][$index]['sub_reservation_id'] ?? $optionsId['reservationId'] ?? null,
+                'cfdi_sign' => $taxStampData['CfdiSign'] ?? null,
+                'rfc_prov_certif' => $taxStampData['RfcProvCertif'] ?? null,
+                'sat_cert_number' => $taxStampData['SatCertNumber'] ?? null,
+                'sat_sign' => $taxStampData['SatSign'] ?? null,
+                'date_time' => $taxStampData['Date'] ?? null,
             ]);
-            if($itemData['Description'] === 'CARGOS ADICIONALES / SERVICIOS EXTRAS'){
-                $invoiceItem->sub_reservation_id = $optionsId['reservationId'] . '-extras' ?? null;
-            }
-            $invoiceItem->save();
-            // Agregar impuestos al ítem
-            $invoiceTaxIva = new InvoiceTax([
-                'invoice_item_id' => $invoiceItem->id,
-                'tax_type' => 'IVA',
-                'rate' => 0.16,
-                'amount' => $itemData['UnitValue'] * 0.16,
-                'retention' => false,
-            ]);
-            $invoiceTaxIsh = new InvoiceTax([
-                'invoice_item_id' => $invoiceItem->id,
-                'tax_type' => 'ISH',
-                'rate' => 0.05,
-                'amount' => $itemData['UnitValue'] * 0.04,
-                'retention' => false,
-            ]);
-            if($itemData['Description'] === 'CARGOS ADICIONALES / SERVICIOS EXTRAS'){
-                // Solo guardar IVA para extras
+            $taxStamp->save();
+
+            $invoiceItemsData = $cfdiResponse['Items'] ?? [];
+
+            foreach ($invoiceItemsData as $index => $itemData) {
+                $invoiceItem = new InvoiceItem([
+                    'invoice_id' => $invoice->id,
+                    'product_code_sat' => $itemData['ProductCode'] ?? '',
+                    'unit_code_sat' => $itemData['UnitCode'] ?? '',
+                    'description' => $itemData['Description'] ?? '',
+                    'quantity' => $itemData['Quantity'] ?? 0,
+                    'unit_price' => $itemData['UnitValue'] ?? 0,
+                    'sub_reservation_id' => $cfdiData['Items'][$index]['sub_reservation_id'] ?? $optionsId['reservationId'] ?? null,
+                ]);
+                if($itemData['Description'] === 'CARGOS ADICIONALES / SERVICIOS EXTRAS'){
+                    $invoiceItem->sub_reservation_id = $optionsId['reservationId'] . '-extras' ?? null;
+                }
+                $invoiceItem->save();
+                // Agregar impuestos al ítem
+                $invoiceTaxIva = new InvoiceTax([
+                    'invoice_item_id' => $invoiceItem->id,
+                    'tax_type' => 'IVA',
+                    'rate' => 0.16,
+                    'amount' => $itemData['UnitValue'] * 0.16,
+                    'retention' => false,
+                ]);
+                $invoiceTaxIsh = new InvoiceTax([
+                    'invoice_item_id' => $invoiceItem->id,
+                    'tax_type' => 'ISH',
+                    'rate' => 0.05,
+                    'amount' => $itemData['UnitValue'] * 0.05,
+                    'retention' => false,
+                ]);
+                if($itemData['Description'] === 'CARGOS ADICIONALES / SERVICIOS EXTRAS'){
+                    // Solo guardar IVA para extras
+                    $invoiceTaxIva->save();
+                    // No agregar impuestos a los extras
+                    continue;
+                }
                 $invoiceTaxIva->save();
-                // No agregar impuestos a los extras
-                continue;
+                $invoiceTaxIsh->save();
             }
-            $invoiceTaxIva->save();
-            $invoiceTaxIsh->save();
-        }
 
         
-        return [
-            'success' => true,
-            'message' => 'CFDI guardado correctamente',
-            'invoice_id' => $invoice->id,
-            'fiscal_entity_id' => $fiscalEntity->id,
-            'cfdiData' => $cfdiData,
-            'cfdiResponse' => $cfdiResponse,
-            'storageResponse' => $storageResponse,
-            'client_id' => $cfdiData['client_id'] ?? null,
-        ];
+            return [
+                'success' => true,
+                'message' => 'CFDI guardado correctamente',
+                'invoice_id' => $invoice->id,
+                'fiscal_entity_id' => $fiscalEntity->id,
+                'cfdiData' => $cfdiData,
+                'cfdiResponse' => $cfdiResponse,
+                'storageResponse' => $storageResponse,
+                'client_id' => $cfdiData['client_id'] ?? null,
+            ];
+                });
 
+            return $result;
+        } catch (\Throwable $exception) {
+            Log::error('Error al guardar CFDI', [
+                'error' => $exception->getMessage(),
+            ]);
 
+            return [
+                'success' => false,
+                'message' => 'Error al guardar CFDI',
+            ];
+        }
     }
 
     public function sendFilesByEmail(array $data, $client_email)
