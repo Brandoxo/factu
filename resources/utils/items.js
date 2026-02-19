@@ -43,13 +43,13 @@ export const items = (reservation) => {
       const rateDate = dailyRate.date ? ` - ${dailyRate.date}` : "";
 
       return {
-      ProductCode: "90111500", //Código estándar para servicios de alojamiento
+      ProductCode: "90111800", //Código estándar para servicios de alojamiento
       IdentificationNumber: `${String(roomIndex + 1).padStart(3, "0")}-${ //Número de identificación único para la habitación
           room.roomName
         }-${String(rateIndex + 1).padStart(3, "0")}`,
       Description: `SERVICIO DE ALOJAMIENTO - HAB ${room.roomName} - ${room.roomTypeName}${rateDate}`, //Descripción del servicio con detalles de la habitación
       Unit: "NO APLICA", //Unidad de medida, "NO APLICA" para servicios
-      UnitCode: "E48", //Código de unidad de medida estándar para servicios
+      UnitCode: "A9", //Código de unidad de medida estándar para servicios
       UnitPrice: parseFloat(roomSubtotal).toFixed(2), //Precio unitario del servicio
       Quantity: 1, //Cantidad de noches o servicios, generalmente 1 por Item
       Subtotal: parseFloat(roomSubtotal).toFixed(2), //Subtotal antes de impuestos
