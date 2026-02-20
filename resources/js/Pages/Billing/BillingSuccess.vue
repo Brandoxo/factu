@@ -1,6 +1,6 @@
 <script setup>
 import LayoutMain from '../../Layouts/LayoutMain.vue';
-import { ref, reactive } from 'vue';
+import { ref, reactive, computed } from 'vue';
 import  { formatCurrency }  from '../../../utils/formatCurrency.js';
 import Swal from 'sweetalert2';
 import axios from 'axios';
@@ -22,6 +22,11 @@ const cfdiResponseTaxes = ref(cfdiResponse.Taxes || []);
 
 const cfdiResponseFiles = ref(cfdiStorage.files || {});
 
+const ishTotal = computed(() => {
+  const ishTax = cfdiResponseItems.value.map(item => item.UnitValue * item.Quantity).reduce((acc, total) => acc + total * 0.05, 0);
+  return ishTax;
+});
+  
 // --- Lógica del Formulario de Email ---
 const email = ref('');
 const loading = ref(false);
@@ -108,9 +113,10 @@ const sendEmail = () => {
           <span>IVA (16%)</span>
           <span class="font-mono">{{ formatCurrency(item.Total) }}</span>
         </div>
-        <div v-for="item in cfdiResponseTaxes" class="flex justify-between text-xs text-gray-500 mb-3">
+        <div  class="flex justify-between text-xs text-gray-500 mb-3">
           <span>ISH  (5%)</span>
-          <span class="font-mono">{{ formatCurrency() }}</span>
+          <!-- Si es un cargo adicional saltarlo-->
+          <span class="font-mono">{{ formatCurrency(ishTotal) }}</span>
         </div>
         <div class="flex justify-between items-center text-lg font-bold text-gray-800 border-t border-dashed border-gray-300 pt-3">
           <span>Total</span>

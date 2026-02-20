@@ -69,7 +69,7 @@ class CloudbedsService
         if ($providedCheckOut && $expectedCheckOut && $expectedCheckOut !== $providedCheckOut) {
             return [
                 'valid' => false,
-                'error' => 'La fecha de check-out no coincide',
+                'error' => 'La fecha de check-out no coincide o el ID de reserva es incorrecto',
                 'expected_check_out' => $expectedCheckOut,
                 'provided_check_out' => $providedCheckOut,
             ];

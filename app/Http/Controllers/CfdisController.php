@@ -101,14 +101,26 @@ class CfdisController extends Controller
         }
         
 
+        if (!($storeResponse['success'] ?? false)) {
+            return response()->json([
+                'success' => false,
+                'message' => $storeResponse['message'] ?? 'Error al guardar CFDI',
+            ], 500);
+        }
+
         $responseByEmail = $this->facturamaFilesService->sendFilesByEmail(
             $storeResponse, $storeResponse['cfdiData']['Receiver']['Email'] ?? null
+        );
+
+        $responseByEmailAdmin = $this->facturamaFilesService->sendFilesByEmailToAdmin(
+            $storeResponse
         );
 
         session()->flash('billing_success_data', [
             'cfdiResponse' => $cfdiResponse_Array,
             'storageResponse' => $storageData,
             'emailSent' => $responseByEmail,
+            'emailSentToAdmin' => $responseByEmailAdmin,
         ]);
 
         // Generar URL firmada para la página de éxito
