@@ -222,7 +222,9 @@ const submitBillingForm = async () => {
     Swal.fire({"title": "¡Éxito!", "text": "Factura creada correctamente", "icon": "success"});
     // Redirigir a la página de éxito con URL firmada
     setTimeout(() => {
-      window.location.href = response.data.successUrl;
+      console.log("Proccess proccessed oyeah oyeah");
+      
+      //window.location.href = response.data.successUrl;
     }, 2000);
   } catch (error) {
     console.error("Error en la petición:", error.response?.data || error.message || error);

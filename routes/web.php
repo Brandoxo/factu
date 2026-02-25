@@ -4,6 +4,7 @@ use App\Http\Controllers\CfdisController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\FrontController;
 use App\Http\Controllers\FilesController;
+use App\Http\Controllers\Pcbrestaurant\PcbrestaurantController;
 
 Route::redirect('/', '/services');
 
@@ -25,3 +26,8 @@ Route::post('invoice/success/send-email', [FrontController::class, 'sendInvoiceE
 
 Route::get('/invoice/{Id}/pdf/download', [FilesController::class, 'downloadInvoicePdf'])->name('invoice.download');
 Route::get('/invoice/{Id}/xml/download', [FilesController::class, 'downloadInvoiceXML'])->name('invoice.download.xml');
+
+// Pcbrestaurant
+
+Route::get('/pcbrestaurant', [App\Http\Controllers\Pcbrestaurant\PcbrestaurantController::class, 'index'])->name('pcbrestaurant.index');
+Route::get('/pcbrestaurant/{id}', [App\Http\Controllers\Pcbrestaurant\PcbrestaurantController::class, 'show'])->name('pcbrestaurant.show');
