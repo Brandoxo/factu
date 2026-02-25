@@ -35,4 +35,10 @@ return [
         ],
     ],
 
+    'facturama' => [
+    'url' => env('FACTURAMA_DEV_ENDPOINT', 'https://apisandbox.facturama.mx'),
+    'user' => env('FACTURAMA_USERAGENT'),
+    'password' => env('FACTURAMA_PASSWORD'),
+]
+
 ];
