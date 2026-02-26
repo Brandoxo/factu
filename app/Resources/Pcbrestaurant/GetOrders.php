@@ -27,7 +27,6 @@ class GetOrders {
             return $response->json();
         } else {
             // Handle error response
-            dd('Error fetching order with ID: ' . $id);
             return null;
         }
     }
