@@ -5,7 +5,7 @@ const taxRegimes = [
       "aplica_para": ["Persona Moral"]
     },
     {
-      "clave": "602",
+      "clave": "626",
       "nombre": "Régimen Simplificado de Confianza (RESICO) Personas Morales",
       "aplica_para": ["Persona Moral"]
     },
