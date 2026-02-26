@@ -19,7 +19,7 @@ export default defineConfig({
         }),
         tailwindcss(),
     ],
-    build: {
+  /* build: {
         minify: 'esbuild',
         terserOptions: {
             compress: {
@@ -29,7 +29,8 @@ export default defineConfig({
     },
     esbuild: {
         drop: ['console', 'debugger'],
-    },
+    }, 
+    */
     server: {
         watch: {
             ignored: ['**/storage/framework/views/**'],
