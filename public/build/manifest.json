@@ -32,7 +32,7 @@
     "src": "public/assets/img/reservationIDExample.jpeg"
   },
   "resources/css/app.css": {
-    "file": "assets/app-DU0osAhc.css",
+    "file": "assets/app-B5mkhb-q.css",
     "src": "resources/css/app.css",
     "isEntry": true,
     "name": "app",
@@ -41,13 +41,13 @@
     ]
   },
   "resources/js/app.js": {
-    "file": "assets/app-DR3b0a1w.js",
+    "file": "assets/app-BWwycQCd.js",
     "name": "app",
     "src": "resources/js/app.js",
     "isEntry": true,
     "css": [
       "assets/app-znDRInya.css",
-      "assets/app-DU0osAhc.css"
+      "assets/app-B5mkhb-q.css"
     ],
     "assets": [
       "assets/logo-OYpAt-Aj.svg",
