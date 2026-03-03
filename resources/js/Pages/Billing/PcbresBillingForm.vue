@@ -71,17 +71,17 @@ const filteredRegimes = computed(() => {
           <div class="grid grid-cols-2 lg:grid-cols-3 gap-4 text-white">
             <div>
               <p class="text-sm opacity-75">Ticket</p>
-              <p class="font-semibold">11111</p>
+              <p class="font-semibold"># {{ props.orderData[0].id }}</p>
             </div>
             <div>
               <p class="text-sm opacity-75">Fecha</p>
-              <p class="font-semibold">Nose</p>
+              <p class="font-semibold">{{ props.orderData[0].date_time }}</p>
             </div>
 
             <div>
-              <p class="text-sm opacity-75">SubTotal + IVA</p>
+              <p class="text-sm opacity-75">SubTotal  ( Ya inlcuye IVA )</p>
               <p class="font-semibold">
-                $ 99.00 MXN
+                $ {{ props.orderData[0].total }} MXN
               </p>
             </div>
           </div>
@@ -92,16 +92,10 @@ const filteredRegimes = computed(() => {
             Artículos consumidos:
           </h3>
           <div class="flex flex-col gap-4 text-white">
-            <div>
-              <p class="font-semibold">Hamburguesa</p>
-              <p class="text-sm opacity-75">Cantidad: 1</p>
-              <p class="text-sm opacity-75">Precio Unitario: $50.00 MXN</p>
-            </div>
-
-            <div>
-              <p class="font-semibold">Refresco</p>
-              <p class="text-sm opacity-75">Cantidad: 2</p>
-              <p class="text-sm opacity-75">Precio Unitario: $25.00 MXN</p>
+            <div v-for="(item, index) in props.orderData[0].orderDetails" :key="index" class="bg-white/10 backdrop-blur-sm rounded-lg p-4">
+              <p class="font-semibold">{{ item.product.name }}</p>
+              <p class="text-sm opacity-75">Cantidad: {{ item.quantity }}</p>
+              <p class="text-sm opacity-75">Precio Unitario: ${{ item.price }} MXN</p>
             </div>
 
           </div>
@@ -111,7 +105,7 @@ const filteredRegimes = computed(() => {
             Total de la orden:
           </h3>
           <p class="text-white text-2xl font-bold">
-            $100 MXN
+            ${{ props.orderData[0].total}} MXN
           </p>
         </div>
         

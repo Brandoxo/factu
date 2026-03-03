@@ -31,5 +31,5 @@ Route::get('/invoice/{Id}/xml/download', [FilesController::class, 'downloadInvoi
 
 Route::get('/pcbrestaurant', [PcbrestaurantController::class, 'index'])->name('pcbrestaurant.index');
 Route::get('/pcbrestaurant/order/{ticketFolio}', [PcbrestaurantController::class, 'show'])->name('pcbrestaurant.show');
-Route::get('/pcbrestaurant/billing/{ticketFolio?}', [PcbrestaurantController::class, 'billing'])->name('pcbrestaurant.billing');
+Route::get('/pcbrestaurant/billing/{ticketFolio}', [PcbrestaurantController::class, 'billing'])->name('pcbrestaurant.billing')->middleware('signed');
 Route::post('/api/pcbrestaurant/order/{id}', [PcbrestaurantController::class, 'apiShow'])->name('api.pcbrestaurant.order.show');

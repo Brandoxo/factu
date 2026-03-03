@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Pcbrestaurant;
 use App\Http\Requests\Pcbrestaurant\ValidateSearchOrderRequest;
 use App\Resources\Pcbrestaurant\GetOrders;
 use App\Http\Controllers\Controller;
+use App\Resources\Pcbrestaurant\PcbrestaurantResource;
 use Illuminate\Http\Request;
 
 class PcbrestaurantController extends Controller
@@ -28,7 +29,7 @@ class PcbrestaurantController extends Controller
         return response()->json(['message' => 'Pcbrestaurant API is working correctly', 'orders' => $orders, 'payload' => $payload]);
     }
 
-    public function billing($ticketFolio = null) {
+    public function billing($ticketFolio) {
         $orderData = null;
         if ($ticketFolio) {
             $response = GetOrders::getOrderById($ticketFolio);
@@ -51,10 +52,12 @@ class PcbrestaurantController extends Controller
     }
 
     public function apiShow(ValidateSearchOrderRequest $request, $id) {
-        $response = GetOrders::getOrderById($id);
-        if (!$response) {
+        $response = new PcbrestaurantResource();
+        $order = $response->getOrderDetails($id);
+        $billingUrl = $response->getBillingUrlForOrder($id, $order[0]['total'], $order[0]['date_time']);
+        if (!$order) {
             return response()->json(['error' => "Orden no encontrada: $id"], 404);
         }
-        return response()->json(['message' => "Showing order with ID: $id", 'order' => $response]);
+        return response()->json(['message' => "Showing order with ID: $id", 'order' => $order, 'billing_url' => $billingUrl]);
     }
 }
