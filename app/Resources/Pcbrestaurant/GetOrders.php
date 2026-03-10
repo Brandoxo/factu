@@ -10,7 +10,7 @@ class GetOrders {
     public function getAllOrders() {
         $url = config('app.pcbrestaurant.api_url') . '/orders' . '/1500';
         //dd($url);
-        $response = Http::get($url);
+        $response = Http::timeout(15)->get($url);
         if ($response->successful()) {
             return $response->json();
         } else {
@@ -22,7 +22,7 @@ class GetOrders {
     //Get a single order by ID just from de API
     public static function getOrderById($id) {
         $url = config('app.pcbrestaurant.api_url') . '/orders' . '/' . $id;
-        $response = Http::get($url);
+        $response = Http::timeout(15)->get($url);
         if ($response->successful()) {
             return $response->json();
         } else {

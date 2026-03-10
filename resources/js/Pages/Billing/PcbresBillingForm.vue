@@ -22,6 +22,7 @@ const form = useForm({
   regimenFiscal: "",
   usoCfdi: "",
   paymentMethod: "",
+  ticketFolio: props.orderData[0].id,
 });
 
 const filteredRegimes = computed(() => {
@@ -41,6 +42,38 @@ const filteredRegimes = computed(() => {
     return true;
   });
 });
+
+const submitForm = () => {
+  const cfdiData = createCfdiData(form);
+
+  console.log("Datos del CFDI a enviar al backend: ", cfdiData);
+
+  form.post("/pcbrestaurant/invoices/store", {
+    onSuccess: (data) => {
+
+      console.log("Respuesta del backend después de generar la factura: ", data);
+      Swal.fire({
+        title: "¡Factura generada!",
+        text: "Tu factura ha sido generada exitosamente.",
+        icon: "success",
+        confirmButtonText: "Descargar CFDI",
+      }).then((result) => {
+        if (result.isConfirmed) {
+          router.visit("/download-pcbres-cfdi");
+        }
+      });
+    },
+    onError: (errors) => {
+      console.error("Errores de validación recibidos del backend: ", errors);
+      Swal.fire({
+        title: "Error al generar la factura",
+        text: "Por favor revisa los datos ingresados e intenta nuevamente.",
+        icon: "error",
+        confirmButtonText: "Aceptar",
+      });
+    },
+  });
+};
 </script>
 
 <template>
@@ -95,7 +128,7 @@ const filteredRegimes = computed(() => {
             <div v-for="(item, index) in props.orderData[0].orderDetails" :key="index" class="bg-white/10 backdrop-blur-sm rounded-lg p-4">
               <p class="font-semibold">{{ item.product.name }}</p>
               <p class="text-sm opacity-75">Cantidad: {{ item.quantity }}</p>
-              <p class="text-sm opacity-75">Precio Unitario: ${{ item.price }} MXN</p>
+              <p class="text-sm opacity-75">Precio Unitario: ${{ item.product.price }} MXN</p>
             </div>
 
           </div>
@@ -112,7 +145,7 @@ const filteredRegimes = computed(() => {
       </div>
 
       <div
-        class="bg-white/10 backdrop-blur-sm rounded-lg p-4 mt-0 text-white"
+        class="bg-white/10 backdrop-blur-sm rounded-lg p-4 mt-0 text-white hidden"
       >
         <div class="flex w-fit mx-auto gap-2 mb-3">
           <h3 class="text-sm">Complementos:</h3>
@@ -168,17 +201,17 @@ const filteredRegimes = computed(() => {
       >
         <h2 class="text-2xl font-semibold">
           Total a facturar:
-          <span class="text-2xl font-semibold underline"> $110.00 MXN </span
+          <span class="text-2xl font-semibold underline"> ${{ props.orderData[0].total }} MXN </span
           >
         </h2>
         <p
-          class="text-red-300 text-sm mt-2"
+          class="text-red-300 text-sm mt-2 hidden"
         >
           ⚠️ Debes seleccionar al menos una habitación para facturar
         </p>
       </div>
 
-      <form @submit.prevent="null" class="">
+      <form @submit.prevent="submitForm" class="">
         <div class="bg-white/10 backdrop-blur-sm rounded-lg p-6 mb-6">
           <h2 class="text-xl font-semibold text-white mb-4 text-center">
             ¿Cuál fué el método de pago?
