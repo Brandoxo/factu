@@ -6,11 +6,11 @@ use App\Http\Requests\Pcbrestaurant\ValidateSearchOrderRequest;
 use App\Resources\Pcbrestaurant\GetOrders;
 use App\Http\Controllers\Controller;
 use App\Jobs\ProcessFacturamaInvoice;
+use App\Models\PcbresFiscalEntity;
 use App\Models\PcbresInvoice;
 use App\Resources\Pcbrestaurant\PcbrestaurantResource;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Http;
 
 class PcbrestaurantController extends Controller
 {
@@ -92,7 +92,6 @@ class PcbrestaurantController extends Controller
                 return response()->json(['message' => 'Este ticket ya está facturado o en proceso.'], 422);
             }
             // Si llega aquí, significa que existe pero su status es 'failed'.
-            // Le permitimos pasar para que el usuario corrija sus datos fiscales.
         }
         // 3. La Fuente de la Verdad (Llamada al POS)
         $posResponse = $response->getOrderDetails($ticketId);
@@ -116,8 +115,7 @@ class PcbrestaurantController extends Controller
         // 6. Transacción Atómica de Base de Datos
         DB::beginTransaction();
         try {
-            // Guardamos al cliente para la próxima vez
-            /*
+            
             PcbresFiscalEntity::updateOrCreate(
                 ['rfc' => strtoupper($data['rfc'])],
                 [
@@ -128,18 +126,15 @@ class PcbrestaurantController extends Controller
                     'email' => $data['email'],
                 ]
             );
-            */
+            
             // Guardamos el snapshot inmutable
             if ($invoice && $invoice->status === 'failed') {
-                // RECICLAJE: Si ya existía y había fallado, actualizamos el payload con 
-                // los nuevos datos corregidos y la devolvemos a la línea de salida.
                 $invoice->update([
                     'status' => 'pending',
                     'stamped_fiscal_data' => $payload,
-                    'error_log' => null, // Limpiamos el historial de fracasos
+                    'error_log' => null,
                 ]);
             } else {
-                // INSERCIÓN NUEVA: Es la primera vez que vemos este ticket
                 $invoice = PcbresInvoice::create([
                     'pos_order_id' => $ticketId,
                     'status' => 'pending',
