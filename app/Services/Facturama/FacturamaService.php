@@ -14,8 +14,6 @@ class FacturamaService
 
     public function __construct()
     {
-        // Regla de oro: Cero credenciales hardcodeadas en el código.
-        // Todo esto debe venir de tu archivo .env
         $this->apiUrl = config('services.facturama.url', 'https://apisandbox.facturama.mx'); 
         $this->user = config('services.facturama.user');
         $this->password = config('services.facturama.password');
@@ -28,7 +26,7 @@ class FacturamaService
     public function stampInvoice(array $payload): array
     {
         $response = Http::withBasicAuth($this->user, $this->password)
-            ->timeout(10) // Evitamos que la petición quede colgada indefinidamente si el SAT o Facturama están teniendo problemas.
+            ->timeout(30) // Evitamos que la petición quede colgada indefinidamente si el SAT o Facturama están teniendo problemas.
             ->post("{$this->apiUrl}/3/cfdis", $payload);
 
         return $this->handleResponse($response);
@@ -71,7 +69,7 @@ class FacturamaService
     {
         // El tipo 'issued' indica que es una factura de ingreso emitida por ti.
         $response = Http::withBasicAuth($this->user, $this->password)
-            ->timeout(10)
+            ->timeout(30)
             ->get("{$this->apiUrl}/cfdi/{$format}/issued/{$facturamaId}"); //
 
         $data = $this->handleResponse($response);

@@ -43,11 +43,22 @@ const filteredRegimes = computed(() => {
   });
 });
 
+const ShowProcessingModal = () => {
+  Swal.fire({
+    title: "Generando factura... Por favor espere.",
+    text: "Estamos procesando su factura, por favor no cierre esta pestaña",
+    allowOutsideClick: false,
+    didOpen: () => {
+      Swal.showLoading();
+    },
+  });
+};
+
 const submitForm = () => {
   const cfdiData = createCfdiData(form);
 
   console.log("Datos del CFDI a enviar al backend: ", cfdiData);
-
+  ShowProcessingModal();
   form.post("/pcbrestaurant/invoices/store", {
     onSuccess: (data) => {
 

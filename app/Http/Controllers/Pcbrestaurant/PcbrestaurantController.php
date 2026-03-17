@@ -11,6 +11,8 @@ use App\Models\PcbresInvoice;
 use App\Resources\Pcbrestaurant\PcbrestaurantResource;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Storage;
 
 class PcbrestaurantController extends Controller
 {
@@ -151,7 +153,61 @@ class PcbrestaurantController extends Controller
         }
 
         // 7. Lanzamos el Job a la cola para que se pelee con el SAT en el fondo
-        ProcessFacturamaInvoice::dispatch($invoice);
+        // ProcessFacturamaInvoice::dispatch($invoice);
+        // 7. EJECUCIÓN SÍNCRONA (Adiós Job, hola tiempo de espera)
+        try {
+            // Cambiamos el estado a procesando (aunque sea por unos segundos)
+            $invoice->update(['status' => 'processing']);
+
+            $service = new \App\Services\Facturama\FacturamaService;
+            $response = $service->stampInvoice($payload);
+            
+            $uuid = $response['Complement']['TaxStamp']['Uuid'];
+            $facturamaId = $response['Id'];
+
+            // Descargamos los archivos en caliente
+            $pdfContent = $service->downloadInvoiceFile($facturamaId, 'pdf');
+            $xmlContent = $service->downloadInvoiceFile($facturamaId, 'xml');
+
+            $pdfPath = "invoices/{$uuid}.pdf";
+            $xmlPath = "invoices/{$uuid}.xml";
+            
+            Storage::disk('local')->put($pdfPath, $pdfContent);
+            Storage::disk('local')->put($xmlPath, $xmlContent);
+
+            // Actualizamos la base de datos con el triunfo
+            $invoice->update([
+                'status' => 'stamped',
+                'uuid' => $uuid,
+                'facturama_id' => $facturamaId,
+                'pdf_path' => $pdfPath,
+                'xml_path' => $xmlPath,
+                'error_log' => null,
+            ]);
+
+            // Disparamos el correo (Esto sumará un par de segundos más a la espera del usuario)
+            if (!empty($data['email'])) {
+                Mail::to($data['email'])->send(new \App\Mail\InvoiceSuccessfulMail($invoice));
+            }
+
+            return response()->json([
+                'message' => '¡Factura generada con éxito y enviada a tu correo!',
+                'invoice_id' => $invoice->id,
+                'uuid' => $uuid
+            ], 200);
+
+        } catch (\Exception $e) {
+            // Si el SAT o Facturama se quejan, lo registramos y le avisamos al usuario al instante
+            $invoice->update([
+                'status' => 'failed',
+                'error_log' => $e->getMessage(),
+            ]);
+
+            // El $e->getMessage() ahora contiene la traducción exacta del error que armamos en el Service
+            return response()->json([
+                'message' => 'El SAT rechazó la factura: ' . $e->getMessage()
+            ], 422); // 422 Unprocessable Entity
+        }
         
         return response()->json([
             'message' => 'Tu factura está en proceso. Te llegará al correo en unos minutos.',

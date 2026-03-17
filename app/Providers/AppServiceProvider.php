@@ -11,7 +11,8 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        // Fix for precision issues in JSON serialization of floats
+        ini_set('serialize_precision', -1);
     }
 
     /**
