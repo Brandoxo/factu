@@ -178,6 +178,18 @@ class PcbrestaurantController extends Controller
             Storage::disk('local')->put($pdfPath, $pdfContent);
             Storage::disk('local')->put($xmlPath, $xmlContent);
 
+            $storageData = [
+                'pdf' => $pdfPath,
+                'xml' => $xmlPath,
+            ];
+
+            $emailWarnings = [];
+            
+            session()->flash('billing_success_data', [
+                'cfdiResponse' => $response,
+                'storageResponse' => $storageData,
+                'emailWarnings' => $emailWarnings,
+            ]);
             // Actualizamos la base de datos con el triunfo
             $invoice->update([
                 'status' => 'stamped',
@@ -194,7 +206,11 @@ class PcbrestaurantController extends Controller
             }
 
             // Caso exitoso
-            return redirect()->back()->with('message', '¡Factura generada con éxito! Revisa tu correo para descargarla.');
+            return redirect()->route('pcbrestaurant.invoice.success', [
+                    'billingData' => session('billing_success_data'),
+                ])->with('message', '¡Factura generada con éxito! Revisa tu correo para descargarla.'); 
+            
+            // return redirect()->back()->with('message', '¡Factura generada con éxito! Revisa tu correo para descargarla.');
 
         } catch (\Exception $e) {
             // Si el SAT o Facturama se quejan, lo registramos y le avisamos al usuario al instante
@@ -208,7 +224,11 @@ class PcbrestaurantController extends Controller
                 'message' => 'El SAT rechazó la factura: ' . $e->getMessage()
             ], 422); // 422 Unprocessable Entity
         }
-        
+
+        // Caso ya facturada
+                    return redirect()->route('pcbrestaurant.invoice.success', [
+                    'billingData' => session('billing_success_data'),
+                ])->with('message', '¡Factura generada con éxito! Revisa tu correo para descargarla.'); 
         return response()->json([
             'message' => 'Tu factura está en proceso. Te llegará al correo en unos minutos.',
             'invoice_id' => $invoice->id
@@ -279,7 +299,7 @@ class PcbrestaurantController extends Controller
     public function invoiceSuccess()
     {
         return inertia('Billing/PcbresBillingSuccess',[
-            'billingData' => [],
+            'billingData' => session('billing_success_data'),
         ]);
     }
 

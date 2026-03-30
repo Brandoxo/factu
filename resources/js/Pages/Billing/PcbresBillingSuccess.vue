@@ -21,11 +21,6 @@ const cfdiResponseItems = ref(cfdiResponse.Items || []);
 const cfdiResponseTaxes = ref(cfdiResponse.Taxes || []);
 
 const cfdiResponseFiles = ref(cfdiStorage.files || {});
-
-const ishTotal = computed(() => {
-  const ishTax = cfdiResponseItems.value.map(item => item.UnitValue * item.Quantity).reduce((acc, total) => acc + total * 0.05, 0);
-  return ishTax;
-});
   
 // --- Lógica del Formulario de Email ---
 const email = ref('');
