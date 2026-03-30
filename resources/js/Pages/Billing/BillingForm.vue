@@ -157,13 +157,13 @@ const selectedItems = computed(() => {
 });
 
 const form = useForm({
-  rfc: "",
-  razonSocial: "",
-  email: "",
-  codigoPostal: "",
-  regimenFiscal: "",
-  usoCfdi: "",
-  paymentMethod: "",
+  rfc: "BEMB991224LP3",
+  razonSocial: "BRANDON SAUL BERMEJO MEDINA",
+  email: "desarrollo.software@pcbtroniks.com",
+  codigoPostal: "45519",
+  regimenFiscal: "625",
+  usoCfdi: "G03",
+  paymentMethod: "01",
 });
 
 const extrasId = computed(() => {

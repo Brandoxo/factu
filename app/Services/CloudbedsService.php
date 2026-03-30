@@ -4,16 +4,14 @@ namespace App\Services;
 
 use App\Models\Invoice;
 use App\Models\InvoiceItem;
-use Illuminate\Support\Facades\Http;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\URL;
 use Carbon\Carbon;
-
-
-use Exception;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\URL;
 
 class CloudbedsService
 {
+    private const BLOCKING_INVOICE_STATUSES = ['pending', 'active'];
+
     /**
      * Obtener y validar datos de reserva desde Cloudbeds API
      */
@@ -85,28 +83,21 @@ class CloudbedsService
     public function extractAllRooms($reservation)
     {
         $allRoomIds = [];
-        if ($reservation['balanceDetailed']['additionalItems'] > 0) {
+        if ($this->hasAdditionalItems($reservation)) {
             $allRoomIds[] = $reservation['reservationID'] . '-extras';
         }
         if (isset($reservation['assigned']) && is_array($reservation['assigned'])) {
             foreach ($reservation['assigned'] as $assignment) {
-                $roomId = $assignment['subReservationID'] ?? $assignment['subReservationID'] ?? null;
+                $roomId = $assignment['subReservationID'] ?? null;
                 if ($roomId) {
                     $allRoomIds[] = $roomId;
                 }
             }
         }
-        $invoicedSubReservationIds = InvoiceItem::whereIn('sub_reservation_id', $allRoomIds)
-            ->whereIn('invoice_id', function ($query) use ($reservation) {
-                $query->select('id')
-                      ->from('invoices')
-                      ->where('reservation_id', $reservation['reservationID'])
-                      ->where('status', 'active');
-            })
-            ->distinct()
-            ->pluck('sub_reservation_id')
-            ->toArray();
-        return array_diff($allRoomIds, $invoicedSubReservationIds);
+
+        $blockedRoomIds = $this->getBlockedRoomIds($reservation['reservationID'], $allRoomIds);
+
+        return array_diff($allRoomIds, $blockedRoomIds);
     }
 
     public function getReservationData($ticketFolio, $checkOut)
@@ -159,12 +150,12 @@ class CloudbedsService
 
         // Extraer TODOS los room_id de la respuesta de Cloudbeds
         $allRoomIds = [];
-        if (($reservation['balanceDetailed'] ?? 0) === 0) {
+        if ($this->hasAdditionalItems($reservation)) {
             $allRoomIds[] = $reservation['reservationID'] . '-extras';
         }
         if (isset($reservation['assigned']) && is_array($reservation['assigned'])) {
             foreach ($reservation['assigned'] as $assignment) {
-                $roomId = $assignment['subReservationID'] ?? $assignment['subReservationID'] ?? null;
+                $roomId = $assignment['subReservationID'] ?? null;
                 if ($roomId) {
                     $allRoomIds[] = $roomId;
                 }
@@ -178,15 +169,7 @@ class CloudbedsService
             ], 422);
         }
 
-        // Obtener habitaciones que YA TIENEN factura activa
-        // Buscar invoices activas de esta reservación que tengan items con sub_reservation_id en $allRoomIds
-        $invoicedRoomIds = Invoice::where('reservation_id', $ticketFolio)
-                                   ->where('status', 'active');
-        $invoicedRoomIds = InvoiceItem::whereIn('sub_reservation_id', $allRoomIds)
-                                   ->whereIn('invoice_id', $invoicedRoomIds->pluck('id'))
-                                   ->distinct()
-                                   ->pluck('sub_reservation_id')
-                                   ->toArray();
+        $invoicedRoomIds = $this->getBlockedRoomIds($ticketFolio, $allRoomIds);
 
         // Identificar habitaciones SIN factura
         $availableRoomIds = array_diff($allRoomIds, $invoicedRoomIds);
@@ -218,5 +201,40 @@ class CloudbedsService
             'available_rooms' => $availableRoomIds,
             'billing_url' => $billingUrl,
         ]);
+    }
+
+    private function getBlockedRoomIds(string $reservationId, array $allRoomIds): array
+    {
+        $invoices = Invoice::where('reservation_id', $reservationId)
+            ->whereIn('status', self::BLOCKING_INVOICE_STATUSES)
+            ->get(['id', 'requested_sub_reservation_ids']);
+
+        $blockedFromItems = [];
+        if ($invoices->isNotEmpty()) {
+            $blockedFromItems = InvoiceItem::whereIn('sub_reservation_id', $allRoomIds)
+                ->whereIn('invoice_id', $invoices->pluck('id'))
+                ->distinct()
+                ->pluck('sub_reservation_id')
+                ->toArray();
+        }
+
+        $blockedFromReservations = $invoices
+            ->pluck('requested_sub_reservation_ids')
+            ->filter()
+            ->flatten()
+            ->map(static fn ($value) => trim((string) $value))
+            ->all();
+
+        $blockedRoomIds = array_values(array_unique(array_filter(array_merge(
+            $blockedFromItems,
+            $blockedFromReservations
+        ))));
+
+        return array_values(array_intersect($allRoomIds, $blockedRoomIds));
+    }
+
+    private function hasAdditionalItems(array $reservation): bool
+    {
+        return (float) ($reservation['balanceDetailed']['additionalItems'] ?? 0) > 0;
     }
 }

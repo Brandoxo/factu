@@ -49,6 +49,14 @@ const submitForm = () => {
     .catch((error) => {
       if (error.response) {
         console.error("Error response:", error.response.data);
+        if (error.response.status === 419) {
+          Swal.fire({
+            icon: "warning",
+            title: "Sesión expirada",
+            text: "Por favor, recargue la página e intente nuevamente.",
+          });
+          return;
+        }
         const msg =
           error.response.data?.message || "Error al buscar la reserva";
 
