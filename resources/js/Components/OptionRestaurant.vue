@@ -29,6 +29,7 @@ const submitForm = () => {
             title: "¡Éxito!",
             text: "La orden fue encontrada correctamente.",
             icon: "success",
+            buttonText: "Continuar",
         }).then(() => {
             if (response.data.billing_url) {
                 router.visit(response.data.billing_url);

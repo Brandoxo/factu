@@ -33,4 +33,5 @@ Route::get('/pcbrestaurant', [PcbrestaurantController::class, 'index'])->name('p
 Route::get('/pcbrestaurant/order/{ticketFolio}', [PcbrestaurantController::class, 'show'])->name('pcbrestaurant.show');
 Route::get('/pcbrestaurant/billing/{ticketFolio}', [PcbrestaurantController::class, 'billing'])->name('pcbrestaurant.billing')->middleware('signed');
 Route::post('/pcbrestaurant/invoices/store', [PcbrestaurantController::class, 'store'])->name('pcbrestaurant.invoices.store');
+Route::get('/pcbrestaurant/invoices/success', [PcbrestaurantController::class, 'invoiceSuccess'])->name('pcbrestaurant.invoice.success');
 Route::post('/api/pcbrestaurant/order/{id}', [PcbrestaurantController::class, 'apiShow'])->name('api.pcbrestaurant.order.show');

@@ -70,6 +70,9 @@ class PcbrestaurantController extends Controller
 
     public function store(Request $request) 
     {
+
+        //return redirect()->back()->with('message', '¡Factura generada con éxito! Revisa tu correo para descargarla.');
+
         $response = new PcbrestaurantResource();
         // 1. Validación estricta usando los nombres de tu objeto Vue
         $data = $request->validate([
@@ -91,7 +94,7 @@ class PcbrestaurantController extends Controller
         if ($invoice) {
             // Si está pendiente, procesando o ya timbrada, bloqueamos.
             if (in_array($invoice->status, ['pending', 'processing', 'stamped'])) {
-                return response()->json(['message' => 'Este ticket ya está facturado o en proceso.'], 422);
+                return redirect()->back()->with('error', 'Ya existe una factura en proceso o generada para este ticket. Si crees que esto es un error, contacta al soporte.')->withInput();
             }
             // Si llega aquí, significa que existe pero su status es 'failed'.
         }
@@ -190,11 +193,8 @@ class PcbrestaurantController extends Controller
                 Mail::to($data['email'])->send(new \App\Mail\InvoiceSuccessfulMail($invoice));
             }
 
-            return response()->json([
-                'message' => '¡Factura generada con éxito y enviada a tu correo!',
-                'invoice_id' => $invoice->id,
-                'uuid' => $uuid
-            ], 200);
+            // Caso exitoso
+            return redirect()->back()->with('message', '¡Factura generada con éxito! Revisa tu correo para descargarla.');
 
         } catch (\Exception $e) {
             // Si el SAT o Facturama se quejan, lo registramos y le avisamos al usuario al instante
@@ -274,6 +274,13 @@ class PcbrestaurantController extends Controller
             "Exportation" => "01",
             "Items" => $items
         ];
+    }
+
+    public function invoiceSuccess()
+    {
+        return inertia('Billing/PcbresBillingSuccess',[
+            'billingData' => [],
+        ]);
     }
 
     private function calculateSubtotal(array $orderData): float

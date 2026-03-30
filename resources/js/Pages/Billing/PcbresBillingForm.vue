@@ -12,7 +12,9 @@ import { usoCfdOptions } from "../../../utils/usoCfdi.js";
 
 const props = defineProps({
   orderData: Object,
+  error: String,
 });
+console.log("Error recibido en el componente: ", props.error);
 console.log("Datos de la orden recibidos en el componente: ", props.orderData);
 const form = useForm({
   rfc: "",
@@ -47,7 +49,7 @@ const ShowProcessingModal = () => {
   Swal.fire({
     title: "Generando factura... Por favor espere.",
     text: "Estamos procesando su factura, por favor no cierre esta pestaña",
-    allowOutsideClick: false,
+    allowOutsideClick: true,
     didOpen: () => {
       Swal.showLoading();
     },
@@ -57,7 +59,7 @@ const ShowProcessingModal = () => {
 const submitForm = () => {
   const cfdiData = createCfdiData(form);
 
-  console.log("Datos del CFDI a enviar al backend: ", cfdiData);
+  //console.log("Datos del CFDI a enviar al backend: ", cfdiData);
   ShowProcessingModal();
   form.post("/pcbrestaurant/invoices/store", {
     onSuccess: (data) => {
@@ -75,6 +77,7 @@ const submitForm = () => {
       });
     },
     onError: (errors) => {
+      Swal.close();
       console.error("Errores de validación recibidos del backend: ", errors);
       Swal.fire({
         title: "Error al generar la factura",
@@ -123,7 +126,7 @@ const submitForm = () => {
             </div>
 
             <div>
-              <p class="text-sm opacity-75">SubTotal  ( Ya inlcuye IVA )</p>
+              <p class="text-sm opacity-75">Total  ( ya inlcuye IVA )</p>
               <p class="font-semibold">
                 $ {{ props.orderData[0].total }} MXN
               </p>
