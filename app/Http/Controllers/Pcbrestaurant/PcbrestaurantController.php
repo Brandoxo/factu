@@ -155,8 +155,6 @@ class PcbrestaurantController extends Controller
             return response()->json(['message' => 'Error interno al preparar la factura.'], 500);
         }
 
-        // 7. Lanzamos el Job a la cola para que se pelee con el SAT en el fondo
-        // ProcessFacturamaInvoice::dispatch($invoice);
         // 7. EJECUCIÓN SÍNCRONA (Adiós Job, hola tiempo de espera)
         try {
             // Cambiamos el estado a procesando (aunque sea por unos segundos)
@@ -237,23 +235,44 @@ class PcbrestaurantController extends Controller
 
     // --- Helpers Privados ---
 
-    private function buildFacturamaPayload(array $orderData, array $data, string $lugarExpedicion): array
+private function buildFacturamaPayload(array $orderData, array $data, string $lugarExpedicion): array
     {
+        // 1. Definimos las metas globales exactas basadas en el Total real del ticket
+        $metaTotal = (float) $orderData['total'];
+        $metaSubtotal = round($metaTotal / 1.16, 2);
+        $metaIva = round($metaTotal - $metaSubtotal, 2); // Calculado por resta para asegurar cuadre perfecto
+
+        // 2. Variables acumuladoras para saber cuánto hemos sumado
+        $acumuladoSubtotal = 0;
+        $acumuladoIva = 0;
+        
+        $totalItemsCount = count($orderData['orderDetails']);
         $items = [];
+        $i = 0;
+
         foreach ($orderData['orderDetails'] as $detail) {
             $cantidad = (float) $detail['quantity'];
             $precioUnitarioConIva = (float) $detail['unit_price']; 
 
-            // 1. Extraemos el valor unitario SIN IVA (Usa 4 a 6 decimales para la precisión del SAT)
+            // Cálculos normales por línea
             $unitPriceSinIva = round($precioUnitarioConIva / 1.16, 6);
-
-            // 2. El Subtotal de la línea es (Precio Unitario * Cantidad) redondeado a 2 decimales
             $subtotalLinea = round($unitPriceSinIva * $cantidad, 2);
-
-            // 3. El IVA de la línea se calcula estrictamente sobre el $subtotalLinea
             $taxAmount = round($subtotalLinea * 0.16, 2);
 
-            // 4. El Total exacto que el SAT espera ver
+            // 3. LA MAGIA: Si es el ÚLTIMO producto, forzamos el cuadre
+            if ($i === $totalItemsCount - 1) {
+                $subtotalLinea = round($metaSubtotal - $acumuladoSubtotal, 2);
+                $taxAmount = round($metaIva - $acumuladoIva, 2);
+                
+                // Recalculamos el UnitPrice para que Facturama no marque error de 
+                // "El subtotal no coincide con (Cantidad * Precio Unitario)"
+                $unitPriceSinIva = round($subtotalLinea / $cantidad, 6);
+            }
+
+            // 4. Sumamos a los acumuladores lo que realmente se va a reportar en esta línea
+            $acumuladoSubtotal += $subtotalLinea;
+            $acumuladoIva += $taxAmount;
+
             $totalLinea = round($subtotalLinea + $taxAmount, 2);
 
             $items[] = [
@@ -262,7 +281,7 @@ class PcbrestaurantController extends Controller
                 "Unit" => "Servicio",
                 "Description" => $detail['product']['name'],
                 "Quantity" => $cantidad,
-                "UnitPrice" => $unitPriceSinIva, // Facturama acepta los 6 decimales aquí
+                "UnitPrice" => $unitPriceSinIva,
                 "Subtotal" => $subtotalLinea,
                 "TaxObject" => "02",
                 "Total" => $totalLinea,
@@ -274,15 +293,16 @@ class PcbrestaurantController extends Controller
                     "IsRetention" => false
                 ]]
             ];
+            
+            $i++;
         }
 
-        // Si el front manda "01 - Efectivo", extraemos solo el "01"
         $formaPago = substr($data['paymentMethod'], 0, 2);
 
         return [
             "Receiver" => [
                 "Name" => strtoupper($data['razonSocial']),
-                "CfdiUse" => substr($data['usoCfdi'], 0, 3), // Seguridad por si manda "G03 - Gastos..."
+                "CfdiUse" => substr($data['usoCfdi'], 0, 3), 
                 "Rfc" => strtoupper($data['rfc']),
                 "FiscalRegime" => substr($data['regimenFiscal'], 0, 3),
                 "TaxZipCode" => $data['codigoPostal']
