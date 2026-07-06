@@ -5,4 +5,5 @@ export const usoCfdOptions = [
   { value: "I01", label: "Construcciones" },
   { value: "I02", label: "Mobilario y equipo de oficina por inversiones" },
   { value: "P01", label: "Por definir" },
+  { value: "S01", label: "Sin efectos fiscales" },
 ];
