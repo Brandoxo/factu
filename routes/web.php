@@ -4,6 +4,7 @@ use App\Http\Controllers\CfdisController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\FrontController;
 use App\Http\Controllers\FilesController;
+use App\Http\Controllers\Pcbrestaurant\PcbrestaurantController;
 
 Route::redirect('/', '/services');
 
@@ -25,3 +26,12 @@ Route::post('invoice/success/send-email', [FrontController::class, 'sendInvoiceE
 
 Route::get('/invoice/{Id}/pdf/download', [FilesController::class, 'downloadInvoicePdf'])->name('invoice.download');
 Route::get('/invoice/{Id}/xml/download', [FilesController::class, 'downloadInvoiceXML'])->name('invoice.download.xml');
+
+// Pcbrestaurant
+
+Route::get('/pcbrestaurant', [PcbrestaurantController::class, 'index'])->name('pcbrestaurant.index');
+Route::get('/pcbrestaurant/order/{ticketFolio}', [PcbrestaurantController::class, 'show'])->name('pcbrestaurant.show');
+Route::get('/pcbrestaurant/billing/{ticketFolio}', [PcbrestaurantController::class, 'billing'])->name('pcbrestaurant.billing')->middleware('signed');
+Route::post('/pcbrestaurant/invoices/store', [PcbrestaurantController::class, 'store'])->name('pcbrestaurant.invoices.store');
+Route::get('/pcbrestaurant/invoices/success', [PcbrestaurantController::class, 'invoiceSuccess'])->name('pcbrestaurant.invoice.success');
+Route::post('/api/pcbrestaurant/order/{id}', [PcbrestaurantController::class, 'apiShow'])->name('api.pcbrestaurant.order.show');

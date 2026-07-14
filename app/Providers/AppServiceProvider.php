@@ -11,7 +11,8 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        // Fix for precision issues in JSON serialization of floats
+        ini_set('serialize_precision', -1);
     }
 
     /**
@@ -19,6 +20,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        //
+        //Fix problema de redondeo
+        ini_set('serialize_precision', -1);
     }
 }

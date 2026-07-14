@@ -7,87 +7,25 @@ import Swal from "sweetalert2";
 import { computed, ref } from "vue";
 import taxRegimes from "../../../utils/taxRegimes.js";
 import { createCfdiData } from "../../../utils/cfdiData.js";
-import { items } from "../../../utils/items.js";
-import { getTotalRate } from "../../../utils/helpers.js";
-import axios from "axios";
 import { paymentMethods } from "../../../utils/paymentMethods.js";
 import { usoCfdOptions } from "../../../utils/usoCfdi.js";
-import { calculateIsh } from "../../../utils/helpers.js";
-import { ishWithIvaPercent } from "../../../utils/helpers.js";
 
 const props = defineProps({
-  reservation: {
-    type: Object,
-    required: true,
-  },
-  filteredRoomsAvailable: {
-    type: Array,
-    required: true,
-  },
+  orderData: Object,
+  error: String,
 });
-console.log("estos son los datos de la reserva", props.reservation);
-console.log(
-  "Estos son los rooms disponibles:",
-  props.filteredRoomsAvailable,
-);
-
-const filteredRoomsAvailableWithExtras = computed(() => {
-  return props.filteredRoomsAvailable.includes(
-    props.reservation.reservationID + "-extras",
-  );
+console.log("Error recibido en el componente: ", props.error);
+console.log("Datos de la orden recibidos en el componente: ", props.orderData);
+const form = useForm({
+  rfc: "",
+  razonSocial: "",
+  email: "",
+  codigoPostal: "",
+  regimenFiscal: "",
+  usoCfdi: "",
+  paymentMethod: "",
+  ticketFolio: props.orderData[0].id,
 });
-console.log(
-  "Filtered Rooms Available with Extras:",
-  filteredRoomsAvailableWithExtras.value,
-);
-
-//Año para ISH
-const yearReservation = props.reservation.startDate.slice(0, 4);
-const taxesIncluded = props.reservation.balanceDetailed.taxesFees;
-const isTaxable = taxesIncluded === 0 ? true : false;
-
-const displayRoomTotal = (room) => {
-  const subtotal = getTotalRate(room.dailyRates);
-  const ish = calculateIsh(subtotal, yearReservation);
-
-  if (isTaxable) {
-    // Impuestos incluidos: mostrar subtotal menos ISH
-    let totalBase = Number(
-      (
-        subtotal /
-        (1 + ishWithIvaPercent[yearReservation] || ishWithIvaPercent["default"])
-      ).toFixed(2),
-    );
-    console.log("Total base sin impuestos:", totalBase);
-    return totalBase.toFixed(2);
-  }
-
-  const iva = subtotal * 0.16;
-  return Number((subtotal + iva + ish).toFixed(2));
-};
-
-const filteredRoomsAvailable = computed(() => {
-  return props.reservation.assigned.filter((room) =>
-    props.filteredRoomsAvailable.includes(room.subReservationID)
-  );
-});
-console.log("Filtered Rooms Available:", filteredRoomsAvailable.value);
-
-// Estado reactivo para trackear qué habitaciones están incluidas (usando subReservationID como clave)
-const selectedRooms = ref(
-  filteredRoomsAvailable.value.reduce((acc, room) => {
-    acc[room.subReservationID] = true;
-    return acc;
-  }, {})
-);
-// Estado reactivo para trackear si los items adicionales están incluidos
-const includeAdditionalItems = ref(true);
-
-if (filteredRoomsAvailableWithExtras.value) {
-   includeAdditionalItems.value = true;
-} else {
-   includeAdditionalItems.value = false;
-}
 
 const filteredRegimes = computed(() => {
   const rfcLength = form.rfc.length;
@@ -107,131 +45,63 @@ const filteredRegimes = computed(() => {
   });
 });
 
-// Computed para calcular el total dinámicamente
-const totalToInvoice = computed(() => {
-  let total = 0;
-
-  // Sumar habitaciones seleccionadas
-  filteredRoomsAvailable.value.forEach((room) => {
-    if (selectedRooms.value[room.subReservationID]) {
-      let roomSubtotal = getTotalRate(room.dailyRates);
-
-      if (!isTaxable) {
-        // Los impuestos NO están incluidos: sumar subtotal + impuestos
-        const ish = calculateIsh(roomSubtotal, yearReservation);
-        const iva = roomSubtotal * 0.16;
-        total += Number((roomSubtotal + iva + ish).toFixed(2));
-      } else {
-        // Los impuestos SÍ están incluidos: el subtotal ya es el total
-        total += Number(roomSubtotal.toFixed(2));
-      }
-    }
-  });
-
-  // Agregar complementos si están seleccionados
-  if (
-    includeAdditionalItems.value &&
-    props.reservation.balanceDetailed.additionalItems > 0
-  ) {
-    const additionalAmount =
-      Number(props.reservation.balanceDetailed.additionalItems) || 0;
-    total += additionalAmount;
-  }
-
-  return Number(total.toFixed(2));
-});
-
-// Computed para obtener los items filtrados
-const selectedItems = computed(() => {
-  const allItems = items(props.reservation);
-  
-  // Filtrar items usando sub_reservation_id
-  return allItems.filter((item) => {
-    // Si el item tiene sub_reservation_id, verificar si está seleccionado
-    if (item.sub_reservation_id) {
-      return selectedRooms.value[item.sub_reservation_id];
-    }
-    // Si no tiene sub_reservation_id (items adicionales), verificar el checkbox de complementos
-    return includeAdditionalItems.value;
-  });
-});
-
-const form = useForm({
-  rfc: "",
-  razonSocial: "",
-  email: "",
-  codigoPostal: "",
-  regimenFiscal: "",
-  usoCfdi: "",
-  paymentMethod: "",
-});
-
-const extrasId = computed(() => {
-  if (props.reservation.balanceDetailed.additionalItems > 0)
-    return {
-      subReservationIDs: [
-        ...props.reservation.assigned.map(
-          (room) => room.subReservationID,
-        ),
-        props.reservation.reservationID + "-extras",
-      ],
-      roomIDs: props.reservation.assigned.map(
-          (room) => room.roomID,
-        ),
-    };
-    else {
-      return {
-        subReservationIDs: [
-          ...props.reservation.assigned.map(
-            (room) => room.subReservationID,
-          ),
-        ],
-       roomIDs: props.reservation.assigned.map(
-          (room) => room.roomID,
-        ),
-      };
-    }
-});
-console.log("Extras ID:", extrasId.value);
-
-const submitBillingForm = async () => {
+const ShowProcessingModal = () => {
   Swal.fire({
-    title: "Generando factura...",
-    text: "Por favor espera mientras se crea tu factura.",
-    allowOutsideClick: false,
+    title: "Generando factura... Por favor espere.",
+    text: "Estamos procesando su factura, por favor no cierre esta pestaña",
+    allowOutsideClick: true,
     didOpen: () => {
       Swal.showLoading();
     },
   });
-  const cfdiDataH = await createCfdiData(form, selectedItems.value);
+};
 
-  console.log("Enviando a Facturama...", cfdiDataH);
+const submitForm = () => {
+  const cfdiData = createCfdiData(form);
 
-  try {
-    const response = await axios.post("/billing/generate-invoice", {
-      cfdiData: cfdiDataH,
-      optionsId: {
-        reservationId: props.reservation.reservationID ?? null,
-        orderId: props.reservation.orderID ?? null,
+  //console.log("Datos del CFDI a enviar al backend: ", cfdiData);
+  ShowProcessingModal();
+  form.post("/pcbrestaurant/invoices/store", {
+    onSuccess: (data) => {
+
+      console.log("Respuesta del backend después de generar la factura: ", data);
+      // INTERCEPTOR: Si el backend nos mandó el prop 'error', lo mostramos y cortamos el flujo
+      if (props.error) {
+          Swal.fire({
+            title: "Atención",
+            text: props.error,
+            icon: "warning",
+            confirmButtonText: "Aceptar",
+          });
+          return; // Salimos inmediatamente para no mostrar el éxito
+      }
+      Swal.fire({
+        title: "¡Factura generada!",
+        text: "Tu factura ha sido generada exitosamente.",
+        icon: "success",
+        confirmButtonText: "Descargar CFDI",
+      }).then((result) => {
+        if (result.isConfirmed) {
+          router.visit("/download-pcbres-cfdi");
+        }
+      });
+    },
+    onError: (errors) => {
+          Swal.close();
+          console.error("Errores de validación recibidos del backend: ", errors);
+          
+          // Extraemos todos los mensajes de error del objeto y los unimos con saltos de línea
+          const errorMessages = Object.values(errors).join('\n');
+
+          Swal.fire({
+            title: "Error al generar la factura",
+            // Si hay errores dinámicos, los mostramos. Si no, usamos el texto genérico de respaldo.
+            text: errorMessages || "Por favor revisa los datos ingresados e intenta nuevamente.",
+            icon: "error",
+            confirmButtonText: "Aceptar",
+          });
       },
-      extrasId: extrasId.value,
-      filteredRoomsAvailable: props.filteredRoomsAvailable,
-    });
-    console.log('FIltered Rooms:', selectedItems.value);
-    console.log("Respuesta Exitosa:", response.data);
-    Swal.fire({"title": "¡Éxito!", "text": "Factura creada correctamente", "icon": "success"});
-    // Redirigir a la página de éxito con URL firmada
-    setTimeout(() => {
-      console.log("Proccess proccessed oyeah oyeah");
-      
-      //window.location.href = response.data.successUrl;
-    }, 2000);
-  } catch (error) {
-    console.error("Error en la petición:", error.response?.data || error.message || error);
-
-    const errorMessage = error.response?.data?.message || error.message || "No se pudo crear la factura.";
-    Swal.fire("Error", errorMessage, "error");
-  }
+  });
 };
 </script>
 
@@ -254,113 +124,62 @@ const submitBillingForm = async () => {
       </div>
 
       <div
-        v-for="room in filteredRoomsAvailable"
         class="bg-white/10 backdrop-blur-sm rounded-lg p-6 mb-6"
       >
         <div>
           <h2 class="text-xl font-semibold text-white mb-4">
-            Información de la Reserva
+            Información de la Orden de Restaurante
           </h2>
-          <div class="grid grid-cols-2 lg:grid-cols-5 gap-4 text-white">
+          <div class="grid grid-cols-2 lg:grid-cols-3 gap-4 text-white">
             <div>
-              <p class="text-sm opacity-75">ID de Reserva</p>
-              <p class="font-semibold">{{ room.subReservationID }}</p>
+              <p class="text-sm opacity-75">Ticket</p>
+              <p class="font-semibold"># {{ props.orderData[0].id }}</p>
             </div>
             <div>
-              <p class="text-sm opacity-75">A nombre de:</p>
-              <p class="font-semibold">{{ reservation.guestName }}</p>
+              <p class="text-sm opacity-75">Fecha</p>
+              <p class="font-semibold">{{ props.orderData[0].date_time }}</p>
             </div>
+
             <div>
-              <p class="text-sm opacity-75">Fecha de inicio</p>
-              <p class="font-semibold">{{ room.startDate }}</p>
-            </div>
-            <div>
-              <p class="text-sm opacity-75">Fecha de salida</p>
-              <p class="font-semibold">{{ room.endDate || "N/A" }}</p>
-            </div>
-            <div>
-              <p class="text-sm opacity-75">Número de habitación</p>
-              <p class="font-semibold">{{ room.roomName }}</p>
-            </div>
-            <div>
-              <p class="text-sm opacity-75">Habitación</p>
-              <p class="font-semibold">{{ room.roomTypeName }}</p>
-            </div>
-            <div>
-              <p class="text-sm opacity-75">Adultos</p>
-              <p class="font-semibold">{{ room.adults }}</p>
-            </div>
-            <div>
-              <p class="text-sm opacity-75">Niños</p>
-              <p class="font-semibold">{{ room.children }}</p>
-            </div>
-            <div>
-              <p class="text-sm opacity-75">Impuesto ISH</p>
+              <p class="text-sm opacity-75">Total  ( ya inlcuye IVA )</p>
               <p class="font-semibold">
-                ${{
-                  isTaxable
-                    ? Number(
-                        calculateIsh(displayRoomTotal(room), yearReservation),
-                      ).toFixed(2)
-                    : Number(
-                        calculateIsh(
-                          getTotalRate(room.dailyRates),
-                          yearReservation,
-                        ),
-                      ).toFixed(2)
-                }}
-                MXN
-              </p>
-            </div>
-            <div>
-              <p class="text-sm opacity-75">SubTotal + IVA</p>
-              <p class="font-semibold">
-                ${{
-                  isTaxable
-                    ? Number(displayRoomTotal(room) * 1.16).toFixed(2)
-                    : Number(getTotalRate(room.dailyRates) * 1.16).toFixed(2)
-                }}
-                MXN
+                $ {{ props.orderData[0].total }} MXN
               </p>
             </div>
           </div>
         </div>
+        <!-- Lista de articulos -->
+        <div>
+          <h3 class="text-lg font-semibold text-white mt-6 mb-4">
+            Artículos consumidos:
+          </h3>
+          <div class="flex flex-col gap-4 text-white">
+            <div v-for="(item, index) in props.orderData[0].orderDetails" :key="index" class="bg-white/10 backdrop-blur-sm rounded-lg p-4">
+              <p class="font-semibold">{{ item.product.name }}</p>
+              <p class="text-sm opacity-75">Cantidad: {{ item.quantity }}</p>
+              <p class="text-sm opacity-75">Precio Unitario: ${{ item.product.price }} MXN</p>
+            </div>
+
+          </div>
+        </div>
         <div class="text-center">
           <h3 class="text-lg font-semibold text-white mt-4 mb-2">
-            Total de la habitación:
+            Total de la orden:
           </h3>
           <p class="text-white text-2xl font-bold">
-            ${{ displayRoomTotal(room) }} MXN
+            ${{ props.orderData[0].total}} MXN
           </p>
         </div>
         
-        <div class="mt-4 text-center">
-          <input
-            type="checkbox"
-            :id="'includeRoom' + room.subReservationID"
-            v-model="selectedRooms[room.subReservationID]"
-            class="mt-4 w-4 h-4 cursor-pointer"
-          />
-          <label
-            :for="'includeRoom' + room.subReservationID"
-            class="text-white ml-2 cursor-pointer"
-          >
-            Incluir esta habitación en la factura
-          </label>
-        </div>
       </div>
 
       <div
-        v-if="reservation.balanceDetailed.additionalItems > 0 && filteredRoomsAvailableWithExtras"
-        class="bg-white/10 backdrop-blur-sm rounded-lg p-4 mt-0 text-white"
+        class="bg-white/10 backdrop-blur-sm rounded-lg p-4 mt-0 text-white hidden"
       >
         <div class="flex w-fit mx-auto gap-2 mb-3">
           <h3 class="text-sm">Complementos:</h3>
           <span class="font-semibold text-sm">
-            ${{
-              Number(reservation.balanceDetailed.additionalItems).toFixed(2)
-            }}
-            MXN
+            $ 10 MXN
           </span>
 
           <VTooltip>
@@ -395,7 +214,6 @@ const submitBillingForm = async () => {
           <input
             type="checkbox"
             id="includeAdditionalItems"
-            v-model="includeAdditionalItems"
             class="w-4 h-4 cursor-pointer"
           />
           <label
@@ -412,19 +230,17 @@ const submitBillingForm = async () => {
       >
         <h2 class="text-2xl font-semibold">
           Total a facturar:
-          <span class="text-2xl font-semibold underline"
-            >${{ totalToInvoice }} MXN</span
+          <span class="text-2xl font-semibold underline"> ${{ props.orderData[0].total }} MXN </span
           >
         </h2>
         <p
-          v-if="!Object.values(selectedRooms).some((selected) => selected)"
-          class="text-red-300 text-sm mt-2"
+          class="text-red-300 text-sm mt-2 hidden"
         >
           ⚠️ Debes seleccionar al menos una habitación para facturar
         </p>
       </div>
 
-      <form @submit.prevent="submitBillingForm" class="">
+      <form @submit.prevent="submitForm" class="">
         <div class="bg-white/10 backdrop-blur-sm rounded-lg p-6 mb-6">
           <h2 class="text-xl font-semibold text-white mb-4 text-center">
             ¿Cuál fué el método de pago?
@@ -586,9 +402,7 @@ const submitBillingForm = async () => {
             </button>
             <button
               type="submit"
-              :disabled="
-                form.processing || !Object.values(selectedRooms).some((selected) => selected)
-              "
+              :disabled="form.processing"
               class="flex-1 px-6 py-3 bg-blue-600 text-white rounded-full hover:bg-blue-700 disabled:opacity-50 transition-all cursor-pointer"
             >
               {{ form.processing ? "Generando..." : "Generar Factura" }}

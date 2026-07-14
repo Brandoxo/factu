@@ -123,4 +123,7 @@ return [
         'store' => env('APP_MAINTENANCE_STORE', 'database'),
     ],
 
+    'pcbrestaurant' => [
+        'api_url' => env('PCB_API_URL'),
+    ],
 ];
