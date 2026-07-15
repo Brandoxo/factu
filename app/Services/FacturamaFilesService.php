@@ -326,7 +326,7 @@ class FacturamaFilesService
     {
         return Http::withBasicAuth($this->username, $this->password)
             ->withoutVerifying()
-            ->post('https://' . $this->getFacturamaEndpoint() . '/3/cfdis', $datosCfdi);
+            ->post($this->getFacturamaEndpoint() . '/3/cfdis', $datosCfdi);
     }
 
     private function persistStampedInvoice(Invoice $invoice, array $cfdiPayload, array $cfdiResponse): Invoice
@@ -625,11 +625,11 @@ class FacturamaFilesService
 
         $xml = Http::withBasicAuth($this->username, $this->password)
             ->withoutVerifying()
-            ->get('https://' . $endpoint . '/api/Cfdi/xml/' . $cfdiType . '/' . $facturamaId);
+            ->get($endpoint . '/api/Cfdi/xml/' . $cfdiType . '/' . $facturamaId);
 
         $pdf = Http::withBasicAuth($this->username, $this->password)
             ->withoutVerifying()
-            ->get('https://' . $endpoint . '/api/Cfdi/pdf/' . $cfdiType . '/' . $facturamaId);
+            ->get($endpoint . '/api/Cfdi/pdf/' . $cfdiType . '/' . $facturamaId);
 
         $xmlBody = $this->extractFacturamaContent($xml);
         $pdfBody = $this->extractFacturamaContent($pdf);
@@ -713,7 +713,7 @@ class FacturamaFilesService
     private function normalizeSubReservationIds(array $subReservationIds): array
     {
         $normalized = array_values(array_unique(array_filter(array_map(
-            static fn ($value) => $value === null ? null : trim((string) $value),
+            static fn($value) => $value === null ? null : trim((string) $value),
             $subReservationIds
         ))));
 
@@ -733,7 +733,7 @@ class FacturamaFilesService
         $itemIds = InvoiceItem::where('invoice_id', $invoice->id)
             ->pluck('sub_reservation_id')
             ->filter()
-            ->map(static fn ($value) => trim((string) $value))
+            ->map(static fn($value) => trim((string) $value))
             ->values()
             ->all();
 

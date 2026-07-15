@@ -32,7 +32,7 @@
     "src": "public/assets/img/reservationIDExample.jpeg"
   },
   "resources/css/app.css": {
-    "file": "assets/app-CJbI9-Mp.css",
+    "file": "assets/app-Dk9Df1o3.css",
     "src": "resources/css/app.css",
     "isEntry": true,
     "name": "app",
@@ -41,17 +41,13 @@
     ]
   },
   "resources/js/app.js": {
-<<<<<<< HEAD
-    "file": "assets/app-B6VPxTSO.js",
-=======
-    "file": "assets/app-CupQ6xW7.js",
->>>>>>> pcbres
+    "file": "assets/app-CV26XXlc.js",
     "name": "app",
     "src": "resources/js/app.js",
     "isEntry": true,
     "css": [
       "assets/app-C6OkVrun.css",
-      "assets/app-CJbI9-Mp.css"
+      "assets/app-Dk9Df1o3.css"
     ],
     "assets": [
       "assets/logo-OYpAt-Aj.svg",
