@@ -278,7 +278,6 @@ class PcbrestaurantController extends Controller
 
             // Caso exitoso
             return redirect()->route('pcbrestaurant.invoice.success', [
-                    'billingData' => session('billing_success_data'),
                 ])->with('message', '¡Factura generada con éxito! Revisa tu correo para descargarla.'); 
             
             // return redirect()->back()->with('message', '¡Factura generada con éxito! Revisa tu correo para descargarla.');

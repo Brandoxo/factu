@@ -79,11 +79,9 @@ const submitForm = () => {
         title: "¡Factura generada!",
         text: "Tu factura ha sido generada exitosamente.",
         icon: "success",
-        confirmButtonText: "Descargar CFDI",
+        confirmButtonText: "Ok",
       }).then((result) => {
-        if (result.isConfirmed) {
-          router.visit("/download-pcbres-cfdi");
-        }
+        return;
       });
     },
     onError: (errors) => {
