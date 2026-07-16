@@ -62,14 +62,16 @@ const submitForm = () => {
   //console.log("Datos del CFDI a enviar al backend: ", cfdiData);
   ShowProcessingModal();
   form.post("/pcbrestaurant/invoices/store", {
-    onSuccess: (data) => {
-
-      console.log("Respuesta del backend después de generar la factura: ", data);
+    onSuccess: (page) => {
+      const error = page.props?.error;
+  console.log("component:", page.component);
+  console.log("errors:", page.props.errors);
+      console.log("Respuesta del backend después de generar la factura: ", page);
       // INTERCEPTOR: Si el backend nos mandó el prop 'error', lo mostramos y cortamos el flujo
-      if (props.error) {
+      if (error) {
           Swal.fire({
             title: "Atención",
-            text: props.error,
+            text: error,
             icon: "warning",
             confirmButtonText: "Aceptar",
           });
@@ -80,8 +82,6 @@ const submitForm = () => {
         text: "Tu factura ha sido generada exitosamente.",
         icon: "success",
         confirmButtonText: "Ok",
-      }).then((result) => {
-        return;
       });
     },
     onError: (errors) => {

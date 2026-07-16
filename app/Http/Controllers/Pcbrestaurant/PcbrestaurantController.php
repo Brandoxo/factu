@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Pcbrestaurant;
 
+use App\Exceptions\Facturama\FacturamaException;
 use App\Http\Requests\Pcbrestaurant\ValidateSearchOrderRequest;
 use App\Resources\Pcbrestaurant\PcbrestaurantResource;
 use App\Resources\Pcbrestaurant\GetOrders;
@@ -124,8 +125,6 @@ class PcbrestaurantController extends Controller
 
     public function store(Request $request) 
     {
-
-        //return redirect()->back()->with('message', '¡Factura generada con éxito! Revisa tu correo para descargarla.');
 
         $response = new PcbrestaurantResource();
         // 1. Validación estricta usando los nombres de tu objeto Vue
@@ -282,20 +281,28 @@ class PcbrestaurantController extends Controller
             
             // return redirect()->back()->with('message', '¡Factura generada con éxito! Revisa tu correo para descargarla.');
 
-        } catch (\Exception $e) {
-            // Si el SAT o Facturama se quejan, lo registramos y le avisamos al usuario al instante
-            $invoice->update([
-                'status' => 'failed',
-                'error_log' => $e->getMessage(),
-            ]);
+            } catch (FacturamaException $e) {
+                $invoice->update([
+                    'status' => 'failed',
+                    'error_log' => $e->rawBody,     // el crudo, para ti
+                ]);
 
-            // BYPASS: Renderizamos la vista inyectando el error del SAT
-            return inertia('Billing/PcbresBillingForm', [
-                'ticketFolio' => $ticketId,
-                'orderData' => [$orderData], 
-                'error' => 'El SAT rechazó la factura: ' . $e->getMessage()
-            ]);
-        }
+                return inertia('Billing/PcbresBillingForm', [
+                    'ticketFolio' => $ticketId,
+                    'orderData'   => [$orderData],
+                    'error'       => $e->userMessage(),
+                ]);
+
+            } catch (\Exception $e) {
+                $invoice->update(['status' => 'failed', 'error_log' => $e->getMessage()]);
+                report($e);
+
+                return inertia('Billing/PcbresBillingForm', [
+                    'ticketFolio' => $ticketId,
+                    'orderData'   => [$orderData],
+                    'error'       => 'Ocurrió un error inesperado. Intenta de nuevo.',
+                ]);
+            }
 
         // Caso ya facturada
                     return redirect()->route('pcbrestaurant.invoice.success', [

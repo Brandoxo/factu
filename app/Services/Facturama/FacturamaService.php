@@ -2,6 +2,7 @@
 
 namespace App\Services\Facturama;
 
+use App\Exceptions\Facturama\FacturamaException;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\Log;
@@ -36,33 +37,40 @@ class FacturamaService
     /**
      * Centralizamos el manejo de errores del API.
      */
-    private function handleResponse(Response $response): array
-    {
-        if ($response->successful()) {
-            return $response->json();
-        }
-
-        // 1. Extraemos toda la información de la petición fallida
-        $statusCode = $response->status();
-        $rawBody = $response->body();
-        $headers = $response->headers();
-
-        // 2. Lo guardamos todo en el archivo laravel.log
-        Log::error('FACTURAMA API ERROR CRÍTICO', [
-            'HTTP_STATUS' => $statusCode,
-            'HEADERS' => $headers,
-            'RAW_BODY' => $rawBody
-        ]);
-
-        // 3. Armamos un mensaje de rescate para el frontend
-        // Así, si el cuerpo está vacío, al menos el modal dirá "Error HTTP 401", en lugar de salir en blanco.
-        $mensajeFrontend = "Error HTTP {$statusCode} devuelto por Facturama.";
-        if (!empty($rawBody)) {
-            $mensajeFrontend .= " Detalles: " . $rawBody;
-        }
-
-        throw new \Exception($mensajeFrontend);
+private function handleResponse(Response $response): array
+{
+    if ($response->successful()) {
+        return $response->json();
     }
+
+    $reference = strtoupper(substr(bin2hex(random_bytes(4)), 0, 8));
+
+    Log::error('FACTURAMA API ERROR', [
+        'REFERENCE'   => $reference,
+        'HTTP_STATUS' => $response->status(),
+        'HEADERS'     => $response->headers(),
+        'RAW_BODY'    => $response->body(),
+    ]);
+
+    $decoded = $response->json();   // null si no es JSON — no truena
+
+    $validationErrors = [];
+    if (is_array($decoded) && is_array($decoded['ModelState'] ?? null)) {
+        foreach ($decoded['ModelState'] as $messages) {
+            foreach ((array) $messages as $m) {
+                $validationErrors[] = (string) $m;
+            }
+        }
+    }
+
+    throw new FacturamaException(
+        statusCode: $response->status(),
+        rawBody: $response->body(),
+        validationErrors: $validationErrors,
+        reference: $reference,
+        message: $decoded['Message'] ?? "Facturama respondió {$response->status()}",
+    );
+}
 
     /**
      * Descargar el archivo de la factura desde Facturama.
