@@ -116,7 +116,7 @@ class PcbrestaurantController extends Controller
         if ($requestData['ticketFolio'] != $orderData[0]['id']) {
             return false;
         }
-        if ($requestData['totalAmount'] !== $orderData[0]['total']) {
+        if ($this->toCents($requestData['totalAmount']) !== $this->toCents($orderData[0]['total'])) {
             return false;
         }
         return true;
@@ -315,6 +315,17 @@ class PcbrestaurantController extends Controller
     }
 
     // --- Helpers Privados ---
+private function toCents(string|int|float $amount): int
+{
+    // Tolera "99", "99.00", "$99.00", "1,299.00", " 99.0 "
+    $clean = preg_replace('/[^0-9.\-]/', '', (string) $amount);
+
+    if ($clean === '' || !is_numeric($clean)) {
+        return -1; // valor imposible: nunca hace match
+    }
+
+    return (int) bcmul($this->bcround($clean, 2), '100', 0);
+}
 
 private function buildFacturamaPayload(array $orderData, array $data, string $lugarExpedicion): array
 {

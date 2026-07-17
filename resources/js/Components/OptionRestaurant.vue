@@ -85,6 +85,11 @@ const submitForm = () => {
     });
 };
 
+// Helpers
+const normalizeAmount = (v) => {
+  const n = parseFloat(String(v).replace(/[^0-9.]/g, ""));
+  return isNaN(n) ? "" : n.toFixed(2);
+};
 </script>
 
 <template>
@@ -105,7 +110,18 @@ const submitForm = () => {
                                 </div>
                                 <div>
                                     <InputLabel for="total-amount" value="Importe total" class="text-white font-extralight text-xl" />
-                                    <input placeholder="00.00" v-model="form.totalAmount" id="total-amount" class="block mt-4 sm:w-46 w-full border-white border-2 rounded-xl p-2 bg-white/10" type="text" name="total-amount" required />
+                                    <!--<input placeholder="00.00" v-model="form.totalAmount" id="total-amount" class="block mt-4 sm:w-46 w-full border-white border-2 rounded-xl p-2 bg-white/10" type="text" name="total-amount" required /> -->
+                                    <input
+                                        class="block mt-4 sm:w-46 w-full border-white border-2 rounded-xl p-2 bg-white/10"
+                                        id="total-amount"
+                                        type="text"
+                                        inputmode="decimal"
+                                        v-model="form.totalAmount"
+                                        @blur="form.totalAmount = normalizeAmount(form.totalAmount)"
+                                        placeholder="0.00"
+                                        name="total-amount"
+                                        required
+                                        />
                                     <InputError class="mt-2" :message="errors['total-amount']" />
                                 </div>
                             </div>
