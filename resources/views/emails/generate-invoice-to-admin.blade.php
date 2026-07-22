@@ -242,6 +242,9 @@
             @php
                 $totalIsh = 0;
                 $ish = 0.05;
+                if(isset($data['cfdiResponse']['Serie']) && $data['cfdiResponse']['Serie'] === 'R') {
+                    $ish = 0; // No ISH, en caso de que la serie sea 'R' (Restaurante)
+                }
                 foreach($data['cfdiResponse']['Items'] as $item) {
                     if(isset($item['Description']) && $item['Description'] === 'CARGOS ADICIONALES / SERVICIOS EXTRAS') {
                         continue;
