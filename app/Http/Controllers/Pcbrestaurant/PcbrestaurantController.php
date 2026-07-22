@@ -267,6 +267,7 @@ class PcbrestaurantController extends Controller
                 $cfdiData = session('billing_success_data');
             try {
                 $this->facturamaFilesService->sendFilesByEmail($cfdiData, $data['email'] ?? null);
+                $this->facturamaFilesService->sendFilesByEmailToAdmin($cfdiData);
             } catch (\Exception $e) {
                 return response()->json([
                     'success' => false,
