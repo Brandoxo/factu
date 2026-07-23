@@ -4,7 +4,7 @@ import { ref, reactive, computed } from 'vue';
 import  { formatCurrency }  from '../../../utils/formatCurrency.js';
 import Swal from 'sweetalert2';
 import axios from 'axios';
-import { router } from '@inertiajs/vue3';
+import { router, usePage } from '@inertiajs/vue3';
 const props = defineProps({
   billingData: {
     type: Object,
@@ -13,6 +13,16 @@ const props = defineProps({
 });
 console.log('Datos de facturación recibidos:', props.billingData);
 
+const page = usePage();
+const ivaRate = computed(() => Number(page.props.taxes?.iva ?? 0.16));
+const ishRate = computed(() => Number(page.props.taxes?.ish ?? 0.05));
+const ivaRatePercent = computed(() => formatPercent(ivaRate.value));
+const ishRatePercent = computed(() => formatPercent(ishRate.value));
+
+function formatPercent(value) {
+  const formatted = (value * 100).toFixed(2).replace(/\.?0+$/, '');
+  return formatted || '0';
+}
 
 const cfdiResponse = reactive(props.billingData.cfdiResponse);
 const cfdiStorage = reactive(props.billingData.storageResponse);
@@ -23,10 +33,13 @@ const cfdiResponseTaxes = ref(cfdiResponse.Taxes || []);
 const cfdiResponseFiles = ref(cfdiStorage.files || {});
 
 const ishTotal = computed(() => {
-  const ishTax = cfdiResponseItems.value.map(item => item.UnitValue * item.Quantity).reduce((acc, total) => acc + total * 0.05, 0);
+  const ishTax = cfdiResponseItems.value
+    .filter((item) => item.Description !== 'CARGOS ADICIONALES / SERVICIOS EXTRAS')
+    .map((item) => item.UnitValue * item.Quantity)
+    .reduce((acc, total) => acc + total * ishRate.value, 0);
   return ishTax;
 });
-  
+
 // --- Lógica del Formulario de Email ---
 const email = ref('');
 const loading = ref(false);
@@ -38,7 +51,7 @@ const sendEmail = () => {
   if (!email.value || !email.value.includes('@')) return;
 
   loading.value = true;
-  
+
   axios.post('/invoice/success/send-email',{
     cfdiData: props.billingData,
     email: email.value,
@@ -110,11 +123,11 @@ const sendEmail = () => {
           <span class="font-mono">{{ formatCurrency(cfdiResponse.Subtotal) }}</span>
         </div>
         <div v-for="item in cfdiResponseTaxes" class="flex justify-between text-xs text-gray-500 mb-3">
-          <span>IVA (16%)</span>
+          <span>IVA ({{ ivaRatePercent }}%)</span>
           <span class="font-mono">{{ formatCurrency(item.Total) }}</span>
         </div>
         <div  class="flex justify-between text-xs text-gray-500 mb-3">
-          <span>ISH  (5%)</span>
+          <span>ISH  ({{ ishRatePercent }}%)</span>
           <!-- Si es un cargo adicional saltarlo-->
           <span class="font-mono">{{ formatCurrency(ishTotal) }}</span>
         </div>

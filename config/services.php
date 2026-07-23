@@ -36,11 +36,17 @@ return [
     ],
 
     'facturama' => [
-        'url' => env('APP_ENV') === 'production' 
+        'url' => env('APP_ENV') === 'production'
                  ? env('FACTURAMA_PROD_ENDPOINT')
                  : env('FACTURAMA_DEV_ENDPOINT', 'https://apisandbox.facturama.mx'),
         'user' => env('FACTURAMA_USERAGENT'),
         'password' => env('FACTURAMA_PASSWORD'),
-    ]
+        'tax_ish' => (float) env('TAX_ISH', 0.05),
+        'tax_iva' => (float) env('TAX_IVA', 0.16),
+    ],
+
+    'billing' => [
+        'project' => env('BILLING_PROJECT', 'both'),
+    ],
 
 ];

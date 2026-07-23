@@ -1,6 +1,7 @@
 <script setup>
-import { ref, defineEmits } from 'vue';
+import { ref, defineEmits, computed } from 'vue';
 import { watch } from 'vue';
+import { usePage } from '@inertiajs/vue3';
 import ButtonBack from '@Components/ButtonBack.vue';
 import OptionHotel from '@Components/OptionHotel.vue';
 import OptionRestaurant from '@Components/OptionRestaurant.vue';
@@ -8,21 +9,37 @@ const emit = defineEmits(['update:modelValue', 'selected']);
 
 const selectedValue = ref(null);
 
+const billingProject = computed(() => usePage().props.billingProject);
 
-const options = [
+const allOptions = [
     { label: 'Hotel', value: 'hotel' },
     { label: 'Restaurante', value: 'restaurante' },
 ];
+
+const options = computed(() => {
+    const project = billingProject.value;
+    if (project === 'both') {
+        return allOptions;
+    }
+    return allOptions.filter((opt) => opt.value === project);
+});
+
+console.log('billingProject:', billingProject.value);
 
 function selectOption(value) {
     selectedValue.value = value;
     emit('update:modelValue', value);
     emit('selected', value);
 }
-
 watch(selectedValue, (newValue) => {
     console.log('Opción seleccionada:', newValue);
     emit('update:modelValue', newValue);
+});
+
+watch(options, (newOptions) => {
+    if (selectedValue.value && !newOptions.some((opt) => opt.value === selectedValue.value)) {
+        selectedValue.value = null;
+    }
 });
 </script>
 
@@ -31,19 +48,17 @@ watch(selectedValue, (newValue) => {
                 <div class="text-white text-center justify-center items-center gap-6 h-full flex flex-col">
                     <h1 class="title text-2xl font-bold">¿Qué servicio desea facturar?</h1>
                     <div class="w-fit flex-col flex md:flex-row gap-6 text-center justify-center items-center  text-xl font-extrabold">
-                        <div v-if="selectedValue !== options[1].value">
+                        <div v-if="options[0] && selectedValue !== options[0].value">
                             <button @click="selectOption(options[0].value)" class="button-left p-4 font-semibold px-10 bg-red-600 w-64 md:w-96 rounded-md hover:bg-red-700 cursor-pointer transition-all ease-in-out max-w-84">{{options[0].label}}</button>
                         </div>
-                        <div v-if="selectedValue !== options[0].value">
+                        <div v-if="options[1] && selectedValue !== options[1].value">
                             <button @click="selectOption(options[1].value)" class="button-right p-4 font-semibold px-6 bg-red-600 w-64 md:w-96 rounded-md hover:bg-red-700 cursor-pointer transition-all ease-in-out max-w-84">{{options[1].label}}</button>
-                        </div>
-                        <div v-if="selectedValue === options[0].value">
                         </div>
                     </div>
                 </div>
                 <div class="flex flex-col gap-6">
-                    <OptionHotel v-if="selectedValue === options[0].value" />
-                    <OptionRestaurant v-if="selectedValue === options[1].value" />
+                    <OptionHotel v-if="(billingProject === 'both' || billingProject === 'hotel') && selectedValue === 'hotel'" />
+                    <OptionRestaurant v-if="(billingProject === 'both' || billingProject === 'restaurante') && selectedValue === 'restaurante'" />
                     <ButtonBack v-if="selectedValue !== null" @click="selectedValue = null" class="cursor-pointer"/>
                 </div>
           </div>

@@ -240,8 +240,12 @@
             </div>
             @endif
             @php
+                $ishRate = (float) config('services.facturama.tax_ish');
+                $ivaRate = (float) config('services.facturama.tax_iva');
+                $ivaRatePercent = rtrim(rtrim(number_format($ivaRate * 100, 2, '.', ''), '0'), '.');
+                $ishRatePercent = rtrim(rtrim(number_format($ishRate * 100, 2, '.', ''), '0'), '.');
                 $totalIsh = 0;
-                $ish = 0.05;
+                $ish = $ishRate;
                 if(isset($data['cfdiResponse']['Serie']) && $data['cfdiResponse']['Serie'] === 'R') {
                     $ish = 0; // No ISH, en caso de que la serie sea 'R' (Restaurante)
                 }
@@ -260,14 +264,14 @@
                 @if(isset($data['cfdiResponse']['Taxes']) && count($data['cfdiResponse']['Taxes']) > 0)
                     @foreach($data['cfdiResponse']['Taxes'] as $tax)
                     <div style="display: flex; justify-content: space-between; padding: 8px 0; font-size: 14px; color: #666;">
-                        <span>{{ $tax['Name'] ?? 'IVA' }} ({{ isset($tax['Rate']) ? '16'. '%' : '16%' }}):</span>
+                        <span>{{ $tax['Name'] ?? 'IVA' }} ({{ isset($tax['Rate']) ? rtrim(rtrim(number_format($tax['Rate'] * 100, 2, '.', ''), '0'), '.') . '%' : $ivaRatePercent . '%' }}):</span>
                         <span style="font-weight: 600;">${{ number_format($tax['Total'], 2) }} MXN</span>
                     </div>
                     @endforeach
                 @endif
                 @if($totalIsh > 0)
                 <div style="display: flex; justify-content: space-between; padding: 8px 0; font-size: 14px; color: #666; border-top: 1px solid #ddd; margin-top: 10px;">
-                    <span>ISH (5%):</span>
+                    <span>ISH ({{ $ishRatePercent }}%):</span>
                     <span style="font-weight: 700; color: #333;">${{ number_format($totalIsh, 2) }} MXN</span>
                 </div>
                 @endif

@@ -1,5 +1,5 @@
 <script setup>
-import { router, useForm } from "@inertiajs/vue3";
+import { router, useForm, usePage } from "@inertiajs/vue3";
 import InputLabel from "@/Components/InputLabel.vue";
 import InputError from "@/Components/InputError.vue";
 import LayoutMain from "@/Layouts/LayoutMain.vue";
@@ -30,6 +30,10 @@ console.log(
   "Estos son los rooms disponibles:",
   props.filteredRoomsAvailable,
 );
+
+const page = usePage();
+const ivaRate = computed(() => Number(page.props.taxes?.iva ?? 0.16));
+const ivaFactor = computed(() => 1 + ivaRate.value);
 
 const filteredRoomsAvailableWithExtras = computed(() => {
   return props.filteredRoomsAvailable.includes(
@@ -62,7 +66,7 @@ const displayRoomTotal = (room) => {
     return totalBase.toFixed(2);
   }
 
-  const iva = subtotal * 0.16;
+  const iva = subtotal * ivaRate.value;
   return Number((subtotal + iva + ish).toFixed(2));
 };
 
@@ -119,7 +123,7 @@ const totalToInvoice = computed(() => {
       if (!isTaxable) {
         // Los impuestos NO están incluidos: sumar subtotal + impuestos
         const ish = calculateIsh(roomSubtotal, yearReservation);
-        const iva = roomSubtotal * 0.16;
+        const iva = roomSubtotal * ivaRate.value;
         total += Number((roomSubtotal + iva + ish).toFixed(2));
       } else {
         // Los impuestos SÍ están incluidos: el subtotal ya es el total
@@ -144,7 +148,7 @@ const totalToInvoice = computed(() => {
 // Computed para obtener los items filtrados
 const selectedItems = computed(() => {
   const allItems = items(props.reservation);
-  
+
   // Filtrar items usando sub_reservation_id
   return allItems.filter((item) => {
     // Si el item tiene sub_reservation_id, verificar si está seleccionado
@@ -315,8 +319,8 @@ const submitBillingForm = async () => {
               <p class="font-semibold">
                 ${{
                   isTaxable
-                    ? Number(displayRoomTotal(room) * 1.16).toFixed(2)
-                    : Number(getTotalRate(room.dailyRates) * 1.16).toFixed(2)
+                    ? Number(displayRoomTotal(room) * ivaFactor).toFixed(2)
+                    : Number(getTotalRate(room.dailyRates) * ivaFactor).toFixed(2)
                 }}
                 MXN
               </p>

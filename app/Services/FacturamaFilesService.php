@@ -513,11 +513,14 @@ class FacturamaFilesService
 
                     $lineBase = ((float) ($itemData['UnitValue'] ?? 0)) * ((float) ($itemData['Quantity'] ?? 0));
 
+                    $ivaRate = (float) config('services.facturama.tax_iva');
+                    $ishRate = (float) config('services.facturama.tax_ish');
+
                     $invoiceTaxIva = new InvoiceTax([
                         'invoice_item_id' => $invoiceItem->id,
                         'tax_type' => 'IVA',
-                        'rate' => 0.16,
-                        'amount' => $lineBase * 0.16,
+                        'rate' => $ivaRate,
+                        'amount' => $lineBase * $ivaRate,
                         'retention' => false,
                     ]);
 
@@ -529,8 +532,8 @@ class FacturamaFilesService
                     $invoiceTaxIsh = new InvoiceTax([
                         'invoice_item_id' => $invoiceItem->id,
                         'tax_type' => 'ISH',
-                        'rate' => 0.05,
-                        'amount' => $lineBase * 0.05,
+                        'rate' => $ishRate,
+                        'amount' => $lineBase * $ishRate,
                         'retention' => false,
                     ]);
 

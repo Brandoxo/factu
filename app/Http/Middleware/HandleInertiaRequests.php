@@ -40,6 +40,11 @@ public function share(Request $request): array
                 'roles' => $request->user()->getRoleNames(), // Roles del usuario
             ] : null,
         ],
+        'taxes' => [
+            'iva' => config('services.facturama.tax_iva', 0.16),
+            'ish' => config('services.facturama.tax_ish', 0.05),
+        ],
+        'billingProject' => config('services.billing.project', 'both'),
     ]);
 }
 
